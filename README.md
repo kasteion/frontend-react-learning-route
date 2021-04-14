@@ -8,8 +8,14 @@ My learning route for frontend with React
 2. Curso Básico de JavaScript
 3. Curso de ECMAScript 6+
 4. Curso de Closures y Scope en JavaScript
+
+- Curso de Asincronimso con JavaScript
+
 5. Curso de Gestión de Dependencias y Paquetes con NPM
 6. Curso profesional de JavaScript
+
+- Curso de Frameworks y Librerías de JavaScript
+
 7. Curso de React.js
 
 ## Intermedio
