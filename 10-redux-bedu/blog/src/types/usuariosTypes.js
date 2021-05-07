@@ -1,0 +1,4 @@
+export const TRAER_TODOS = "usuarios_traer_usuarios";
+export const CARGANDO = "usuarios_cargando";
+export const ERROR = "usuarios_error";
+export const SET_PUBLICACION = "usuarios_set_publicacion";
