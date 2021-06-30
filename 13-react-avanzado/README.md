@@ -247,6 +247,12 @@ En el package json debemos crear un nuev script
 }
 ```
 
+Al final pues solo ejecuté
+
+> vercel
+
+Y eso publica el proyecto (Nota, lee lo que esté publicado en el directorio de public)
+
 # Creando la interfaz con styled-components
 
 ## ¿Qué es CSS-in-JS?
@@ -290,31 +296,988 @@ Hay una extensión de VSCode llamada vscode-styled-components.
 
 ## Creando nuestro primer componente: Category
 
+Primero vamos a instalar la dependencia de styled-compoents
+
+> npm install styled-components
+
+Vamos a crear el componente App.js
+
+```javascript
+import React from "react";
+import {Category} from './componets/Category'
+
+const App = () => (<Category />)
+```
+
+Así ahora podemos renderizar el componente App en el index.js
+
+Creamos una carpeta llamada components y dentro otra carpeta llamada Category y allí creamos un archivo index.js
+
+```javascript
+import React from 'react';
+import { Anchor, Image } from './styles';
+
+const DEFAULT_IMAGE = 'https://i.imgur.com/dJa0Hpl.jpg';
+
+export const Category = ({ cover = DEFAULT_IMAGE, path, emoji= '?'}) => (
+  <Anchor href={path}>
+    <Image src={cover} />
+    {emoji}
+  </Anchor>
+)
+```
+
+Así como hemos creado las carpetas vamos a crear otro archivo llamado styles.js dentro de la carpeta Category, en este archivo van los estilos de nuestro compoente
+
+```javascript
+import styled from 'styled-components'
+
+export const Anchor = styled.a`
+  display: flex;
+  flex-direction: column;
+  text-aling: center;
+  text-decoration: none;
+  width: 75px;
+`
+
+export const Image = styled.img`
+  border: 1px solid #ddd;
+  box-shadows: 0px 10px 14px rgba(0, 0, 0, .2);
+  border-radius: 50%;
+  height: auto;
+  overflow: hidden;
+  object-fit: cover;
+  height: 75px;
+  width: 75px;
+`
+```
+
+Para conseguir que el editor resalte bien la sintaxis dentro de la cadena de styled components debemos instalar una extensión de styled components. 
+
 ## Creando ListOfCategories y estilos globales
+
+Pues las categorías no van solas sino que son una lista.
+
+Creamos una nueva carpeta dentro de components llamada ListOfCategories, dentro creamos un index.js y un styles.js
+
+```javascript
+import styled from 'styled-components'
+
+export const List = styled.ul`
+  display: flex;
+  overflow: scroll;
+  width: 100%;
+`
+
+export const Item = styled.li`
+  padding: 0 8px;
+`
+```
+
+```javascript
+import React from 'react'
+import { Category } from "../Category"
+import { List, Item } from "./styles" 
+
+export const ListOfCategories = () => {
+  return (
+    <List>
+      {
+        [1, 2].map(category => <Item key={category}><Category /></Item>)
+      }
+    </List>
+  )
+}
+```
+
+Styled Components ofrece una forma de tener estilos globales en nuestra aplicación, para hacer esto debemos crear el archivo src/GlobalStyles.js
+
+```javascript
+import { createGlobalStyle } from 'styled-components'
+
+export const GlobalStyle = createGlobalStyle`
+        html {
+                box-sizing: border-box;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        *, *::before, *::after {
+                box-sizing: inherit;
+        }
+        
+        ul, li, h1, h2, h3, p, button {
+                margin: 0;
+        }
+
+        ul {
+                list-style: none;
+        }
+
+        button {
+                background: transparent;
+                border: 0;
+                outline: 0;
+        }
+
+        body {
+                background: #fefefe;
+                height: 100vh;
+                margin: 0 auto;
+                max-width: 500px;
+                overscroll-behavior: none;
+                width: 100%;
+        }
+
+        #app {
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+                overflow-x: hidden;
+                min-height: 100vh;
+                padding-bottom: 10px;
+        }
+`
+```
+
+Ahora para usar los estilos globales debemos trabajar en el archivo App.js
+
+```javascript
+import React from "react";
+import { ListOfCategories } from './componets/ListOfCategories'
+import { GlobalStyle } from './GlobalStyle'
+const App = () => (
+  <>
+    <GlobalStyle />
+    <ListOfCategories />
+  </>
+)
+```
 
 ## Usar información real de las categorías
 
+Todavía estamos dando los valores por defecto... pero ahora deberíamos presentar información real. Para esto podemos importar directamente el archivo db.js de las categorías
+
+```javascript
+import { categories } from '../../../api/db.json'
+
+export const ListOfCategories = () => {
+  return (
+    <List>
+      {
+        categories.map(category => <Item key={category.id}><Category {...category}/></Item>)
+      }
+    </List>
+  )
+}
+```
+
 ## Creando PhotoCard y usando react-icon
+
+Ahora el componente PhotoCard para ver las fotos de los animalitos y darle like a las fotos.
+
+Necesitaremos instalar react-icons
+
+> npm install react-icons
+
+Creamos una carpeta llamada PhotoCard y dentro index.js y styles.js
+
+```javascript
+import styled from 'styled-components'
+
+export const ImgWrapper = styled.div`
+  border-radius: 10px;
+  display: block;
+  height: 0;
+  overflow: hidden;
+  padding: 56.25% 0 0 0;
+  position: relative;
+  width: 100%;
+`
+
+export const Img = styled.img`
+  box-shadow: 0 10px 15px rgba(0, 0, 0, .2);
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  width: 100%;  
+`
+
+export const Button = styled.button`
+  display: flex;
+  align-items: center;
+  padding-top: 8px;
+
+  & svg {
+    margin-right: 4px;
+  }
+`
+```
+
+```javascript
+import React from 'react'
+import {ImgWrapper, Img, Button} from './styles'
+import { MdFavoriteBorder } from 'react-icons/md'
+
+const DEFAULT_IMAGE = 'https://una-imagen/';
+
+export const PhotoCard = ({ id, likes = 0, src }) => {
+  return (
+    <ImgWraper>
+      <a href={`/detail/${id}`}>
+        <div>
+          <Img src={src}/>
+        </div>
+      </a>
+      <Button>
+        <MdFavoriteBorder size='32px'/>{ likes } likes!
+      </Button>
+    </ImgWraper>
+  )
+}
+```
+
+Creamos un componente llamado ListOfPhotoCards para renderizar varias PhotoCard.
+
+Los iconos de react-icons aceptan la propiedad size para indicarle el tamaño del icono.
+
+Ahora podemos importarla desde el componente App.js y lo renderizamos debajo de la lista de categorías.
+
+```javascript
+export const ListOfPhotoCards = () => {
+  return (
+    <ul>
+      {[1, 2, 3].map(id => <PhotoCard key={id}/>)}
+    </ul>
+  )
+}
+```
 
 ## SVGR: de SVG a componentes de REactJS
 
+Ahora debemos crear un logo...
+
+Vamos a la página maketext.io cambiamos colores y eso y lo descargamos como svg.
+
+https://maketext.io/
+
+Luego nos pasamos a SVGOMG para optimizar nuestro logo y tener una mejor versión para nuestro proyecto. Desde esta página podemos descargarlo o solo copiar el código del svg para poner el código en un componente. Copiamos el código.
+
+https://jakearchibald.github.io/svgomg/
+
+El código copiado lo pasamos al SVGR aquí basicamente le pasamos un código svg y nos da un componente de react.
+
+Copiamos lo que nos crea SVGR y creamos un nuevo componente. Creamos una carpeta llamada Logo y dentro el index.js y dentro copaimos el codigo del SVGR
+
+https://react-svgr.com/playground/
+
+Este componente Logo lo importamos en el App.js
+
+Este Logo pues también tiene los estilos:
+
+```javascript
+import styled from 'styled-components'
+
+export const Svg = styled.svg`
+  width: 220px;
+  margin-left: -10px;
+  margin-top: -30px;
+`
+```
 ## Creando animaciones con keyframes
+
+Vamos a crear una animación para mostrar las animaciones de una forma más gradual con un fade. Para eso nos vamos al styles.js de PhotoCard
+
+```javascript
+// Debemos importar keyframes además de styled
+import styled, { keyframes } from 'styled-components'
+
+// Creamos una nueva constante que nos permitira crear los keyframes de nuestra animación
+const fadeInKeyframes = keyframes`
+  from {
+    filter: blur(5px);
+    opacity: 0;
+  }
+
+  to {
+    filter: blur(0);
+    opacity: 1;
+  }
+`
+
+// Y luego en el componente Img debemos indicarle que animación vams a utilizar
+
+export const Img = styled.img`
+  animation: 1s ${fadeInKeyframes} ease;
+  // resto de estilos
+`
+```
+
+Podemos crear una función para que esto sea más reutilizable:
+
+```javascript
+// Debemos importar css tambien
+import styled, { css, keyframes } from 'styled-components'
+
+const fadeIn = ({ time = '1s', type = 'ease'} = {}) => 
+  css`animation: ${time} ${fadeInKeyframes} ${type};`
+
+const fadeInKeyframes = keyframes`
+  from {
+    filter: blur(5px);
+    opacity: 0;
+  }
+
+  to {
+    filter: blur(0);
+    opacity: 1;
+  }
+`
+
+// Ahora el fadein lo podemos usar en la imagen
+export const Img = styled.img`
+  // ${fadeIn({ time: '5s' })}
+  // resto de estilos
+`
+```
+
+De hecho para asegurarnos de que esto sea totalmente reutilizable podemos sacar el método fadeIn y el keyframe.
+Entonces podemos crear src/styles/animation.js
+
+```javascript
+import { css, keyframes } from 'styled-components'
+
+export const fadeIn = ({ time = '1s', type = 'ease'} = {}) => 
+  css`animation: ${time} ${fadeInKeyframes} ${type};`
+
+const fadeInKeyframes = keyframes`
+  from {
+    filter: blur(5px);
+    opacity: 0;
+  }
+
+  to {
+    filter: blur(0);
+    opacity: 1;
+  }
+```
+
+Ahora ya podemos usarlo en los estilos del componente...
+
+```javascript
+// Ya no necesito ni los keyframes ni css
+import styled from 'styled-components'
+// Pero si necesito importar la función fadeIn
+import { fadeIn } from '../../styles/animation'
+
+// Y luego en el componente Img debemos indicarle que animación vams a utilizar
+
+export const Img = styled.img`
+  ${fadeIn()}
+  // resto de estilos
+`
+```
+
+Para tener todo más ordenado podemos mover GlobalStyles dentro de la misma carpeta styles
 
 # Hooks
 
 ## ¿Qué son los Hooks?
 
+Los react hooks estan disponible a partir de la versión 16.8.0 de React.
+
+Los React Hooks son funciones que nos permiten acceder a **casi todas** las características de REact desde componentes funcionales.
+
+**¿Por qué casi todas?**
+
+No se puede utilizar getSnapshotBeforeUpdate, componentDidCatch por ahora.
+
+**Hooks principales**
+
+Y los más importantes y que se utilizarán en el 90% de los casos son:
+
+- useState: Para añadir estado locar en el componente.
+
+```javascript
+import React, { useState } from 'react'
+
+export default function Counter () {
+  const [counter, setCounter ] = useState(0)
+
+  return (
+    <div>
+      <span>{counter}</span>
+      <button onClick={() => setCounter(counter + 1)}>+</button>
+      <button onClick={() => setCounter(counter - 1)}>-</button>
+    </div>
+  )
+}
+```
+- useEffect: Nos permitira ejecutar una función cada vez que renderizamos nuestro componente.
+- useContext: Nos permite acceder a la context api para acceder a valores que tendremos en toda nuestra aplicación sin necesidad de pasar todo por props
+
+**Hooks auxiliares**
+
+Nos permiten acceder a otras funcionalidad.
+
+- useReducer: Nos permite actualizar el estado de nuestro componente como lo haríamos con Redux.
+- useCallback
+- useMemo
+- useRef: Nos permite cojer referencias del DOM
+- useImperativeHandle
+- useLayoutEffect
+- useDebugValue: Nos permite acceder a valores sin hacer console.log
+
+**Custom Hooks**
+
+Podemos crear hooks para poder reutilizar la lógica en multiples componentes.
+
+**Ventajas**
+
+- Separación de conceptos: Nos permite separar los conceptos en diferentes hooks.
+- 100% retrocompatilbes. No tenemos que volver a escribir todo para adaptarlos a hooks.
+- Mejora transpilación con Babel. El código resultante queda muy largo al trabajar con babel, pero es más simple para babel hacerlo con funciones.
+- Mejor performance.
+
+Podemos empezar agregando state con el componente ListOfCategories.
+
+```javascript
+import React, { useState, useEffect } from 'react'
+// import { categories as mockCategories} from '../../../api/db.json'
+
+export const ListOfCategories = () => {
+  const [categories, setCategories] = useState([])
+
+  useEffect(() => {
+    window.fetch('http://localhost:3500/categories')
+    .then(res => res.json())
+    .then(data => setCategories(data))
+  }, [])
+}
+```
 ## useEffect: limpiando eventos
+
+Queremos que la lista de categorías no sigua para que el usuario pueda seguir navegando.
+
+En el componente ListOfCategories
+
+```javascript
+import React, { useState, useEffect } from 'react'
+import { Category } from '../Category'
+import { List, Item } from './styles'
+
+export const ListOfCategories = () => {
+  const [categories, setCategories] = useState([])
+
+  useEffect(() => {
+    window.fetch('http://localhost:3500/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data))
+  }, [])
+
+  // 1. Sacamos el render a una función
+  /*
+  const renderList = () => (
+    <List>
+      {
+        categories.map(category =>
+          <Item key={category.id}>
+            <Category {...category} />
+          </Item>
+        )
+      }
+    </List>
+  )
+  */
+  // 3. Le agregamos a la función el parametro fixed y un classname con una ternaria
+  const renderList = (fixed) => (
+    <List className={fixed ? 'fixed' : ''}>
+      {
+        categories.map(category =>
+          <Item key={category.id}>
+            <Category {...category} />
+          </Item>
+        )
+      }
+    </List>
+  )
+
+  return (
+    <>
+    {
+      //2. Aquí cambiamos por la función de renderList() pues lo que queremos es tener dos tipos de listas, una que siempre estará arriba y otra que queremos que este fija cuando estemos haciendo scroll.
+      // <List>
+      // {
+      //   categories.map(category =>
+      //     <Item key={category.id}>
+      //       <Category {...category} />
+      //     </Item>
+      //   )
+      // }
+      // </List>
+      renderList()
+      renderList(true)
+    }
+    </>
+  )
+}
+```
+
+Hasta aquí tendríamos dos veces la lista de categorías renderizada... vamos a styles.js
+
+```javascript
+import styled from 'styled-components'
+
+// 4. Le agregamos un selector & para la clase fixed
+export const List = styled.ul`
+  display: flex;
+  overflow: scroll;
+  overflow-y: hidden;
+  width: 100%;
+
+  & .fixed {
+    background: #fff;
+    border-radius: 60px;
+    box-shadow 0 0 20px rgba(0,0,0, 0.3);
+    left: 0;
+    margin: 0 auto;
+    max-width: 400px;
+    padding: 5px;
+    position: fixed;
+    top: -20px;
+    transform: scale(.5);
+    z-index: 1;
+  }
+`
+
+export const Item = styled.li`
+  padding: 0 8px;
+`
+```
+
+Seguimos teniendo dos veces la lista de categorías, para hacer que una aparezca cuando la otra desaparezca debemos agregar otro useEffect()
+
+```javascript
+// 1. Necesito agregar un stado de showFixed
+const [showFixed, setShowFixed] = useState(false)
+
+useEffect(() => {
+  const onScroll = e => {
+    const newShowFixed = window.scrollY  > 200
+    showFixed !== newShowFixed ??  setShowFixed(newShowFixed)
+  }
+
+  document.addEventListener('scroll', onScroll)
+
+  return () => document.removeEventListener('scroll', onScroll)
+}, [showFixed])
+
+return (
+    <>
+    {renderList()}
+    {showFixed && renderList(true)}
+    </>
+```
 
 ## useCategoriesData
 
+Vamos a ver algunas buenas prácticas para hacer el fetch de nuestras categorías y que todo funcione correctamente y que más adelante no tengamos sorpresas. 
+
+1. Pasar el estilo fixed por className no es correcto con styled components así que debemos pasarlo por props
+
+```javascript
+  const renderList = (fixed) => (
+    {/*<List className={fixed ? 'fixed' : ''}>*/}
+    <List fixed={fixed}>
+      {
+        categories.map(category =>
+          <Item key={category.id}>
+            <Category {...category} />
+          </Item>
+        )
+      }
+    </List>
+  )
+```
+
+En los estilos en lugar de usar el classname vamos a evaluar las props.
+
+```javascript
+// 1. Tenemos que importar css
+import styled, {css} from 'styled-components'
+
+export const List = styled.ul`
+  display: flex;
+  overflow: scroll;
+  overflow-y: hidden;
+  width: 100%;
+
+  // Aquí evaluamos la prop
+
+  ${props => props.fixed && css`
+    background: #fff;
+    border-radius: 60px;
+    box-shadow 0 0 20px rgba(0,0,0, 0.3);
+    left: 0;
+    margin: 0 auto;
+    max-width: 400px;
+    padding: 5px;
+    position: fixed;
+    top: -20px;
+    transform: scale(.5);
+    z-index: 1;
+  `}
+`
+```
+
+Haciendolo de esta forma no vamos a tener ninguna colisión con los classNames y aprovechamos las cosas buenas de styled-components.
+
+2. El fetching de datos con las categorías lo podemos hacer con buenas practicas creando un custom hook
+
+```javascript
+const useCategoriesData = () => {
+  const [categories, setCategories] = useState([])
+
+  useEffect(() => {
+    window.fetch('http://localhost:3500/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data))
+  }, [])
+
+  return { categories }
+}
+```
+
+Y en ListOfCategories podemos hacer:
+
+```javascript
+export const ListOfCategories = () => {
+  const { categories } useCategoriesData();
+}
+```
+
+El custom hook nos permite hacer más cosas como por ejemplo tener más estados (loading, error)
+
+```javascript
+const useCategoriesData = () => {
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    window.fetch('http://localhost:3500/categories')
+      .then(res => res.json())
+      .then(data => {
+        setCategories(data)
+        setLoading(false)
+      })
+  }, [])
+
+  return { categories, loading }
+}
+```
+
 ## Usando Intersection Observer
+
+Hasta aquí el problema puede ser que estamos renderizando la ListOfPhotoCards todos las fotografías que nos llegan en la consulta, en lugar de ir renderizandolas de 3 en 3 o por partes conforme el usuario hace scroll para esto se puede hacer un custom hook.
+
+```javascript
+// 1. Primero importamos 3 hooks de react
+import React, { useEffect, useRef, useState} from 'react'
+import { ImgWrapper, Img, Button } from './styles'
+import { MdFavoriteBorder } from 'react-icons/md'
+
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60'
+
+export const PhotoCard = ({ id, likes = 0, src = DEFAULT_IMAGE }) => {
+  // 2. Vamos a empezar utilizando useRef para obtener la referencia del elemento en el dom, el valor inicial del useRef es null
+  const ref = useRef(null)
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    // console.log(ref.current)
+    // 3. Aquí vamos a crear un IntersectionObserver
+    const observer = new window.IntersectionObserver((entries) => {
+      //console.log(entries)
+      // 5. La propiedad que nos interesa es isIntersecting
+      const { isIntersecting } = entries[0]
+      // console.log(isIntersecting);
+      if (isIntersecting){
+        setShow(true)
+        // Una vez que el elemento se intersecta desconectamos el observer.
+        observer.disconnect()
+      }
+    })
+
+    // 4. Inicializamos el Intersection Observer
+    observer.observe(element.current)
+  }, [ref])
+
+  return (
+    { /* La prop ref es especial de react y nos permite guradar la referencia del dom*/}
+    <article ref={ref}>
+        { show && 
+          <>
+          <a href={`/detail/${id}`}>
+          <ImgWrapper>
+            <Img src={src} />
+          </ImgWrapper>
+          </a>
+          <Button>
+            <MdFavoriteBorder size='32px' />{likes} likes!
+          </Button>
+          </>
+        }
+    </article>
+  )
+}
+```
+
+Es necesario estilar el Article porque al no mostrar nada dentro del mismo entonces al cargar todos los articles estan visibles en el viewport... entonces necesitariamos estilar el article con styled-components.
+
+```javascript
+import styled from 'styled-components'
+
+export const Article = styled.article`
+  min-height: 200px;
+`
+```
 
 ## Uso de polyfill de Intersection Observer e imports dinámicos
 
+Según el profesor el uso de Intersection Observer no está muy extendido en todos los navegadores... pero podemos utilizar un polyfill
+
+> npm install intersection-observer
+
+Luego en el componente PhotoCard pero como queremos hacerlo como un import dinamico
+
+> npm install --save-dev @babel/plugin-syntax-dynamic-import
+
+Y en el webpack.config.js
+
+```javascript
+use: {
+          loader: 'babel-loader',
+          options: {
+            // Debemos agregar el plugin aquí
+            plugins: ['@babel/plugin-syntax-dynamic-import'],
+            presets: ['@babel/preset-env', '@babel/preset-react']
+          }
+        }
+```
+
+```javascript
+useEffect(() => {
+  // En lugar de hacer el import directamente al principio haremos un import dinamico, este import dinamico devuelve una promesa. 
+    import('intersection-observer')
+      .then(() => {
+        const observer = new window.IntersectionObserver((entries) => {
+      const { isIntersecting } = entries[0]
+      if (isIntersecting){
+        setShow(true)
+        observer.disconnect()
+      }
+      })
+    })
+```
+
+Aquí el problema sería que estaríamos cargando este polyfill aún cuando no sea necesario. Entonces es mejor hacerlo así:
+
+```javascript
+useEffect(() => {
+    Promise.resolve(
+      // Haciendolo de esta forma primero verificamos si el navegador ya soporta IntersectionObserver
+      typeof window.IntersectionObserver !== 'undefined'
+        ? window.IntersectionObserver
+        : import('intersection-observer')
+    ).then(() => {
+        const observer = new window.IntersectionObserver((entries) => {
+      const { isIntersecting } = entries[0]
+      if (isIntersecting){
+        setShow(true)
+        observer.disconnect()
+      }
+      })
+    })
+```
+
+El linter da un error en la sintaxis del import('intersection-observer') esto es porque debemos isntalar otro parseador diferente al que usa el linter por defecto e indicarle al linter que queremos utilizar otro parseador:
+
+> npm install --save-dev babel-eslint
+
+Y una vez instalado cambiamos una configuración en el package.json
+
+```json
+"eslintConfig": {
+    "parser": "babel-eslint",
+    "extends": [
+      "./node_modules/standard/eslintrc.json"
+    ]
+  }
+```
+
 ## Usando el localStorage para guardar los likes
 
+El boton de likes todavía no hace nada... así que debemos trabajar en PhotoCard
+
+```javascript
+// De material design deberíamos tener otro logo
+import { MdFavoriteBorder, MdFavorite } from 'react-icons/md'
+
+export const PhotoCard = ({id, likes = 0, src = DEFAULT }) => {
+  // ...
+  const [liked, setLiked] = useState(false)
+
+  // Una constante para setear el icono
+  const Icon = liked ? MdFavorite : MdFavoriteBorder
+
+  // Y al button
+  return (
+    <Button onClick={() => setLiked(!liked)}>
+      <Icon size='32px' />
+    </Button>
+  )
+}
+```
+
+El like se pierde al refrescar la página así que tratemos de almacenar el like en el local storage
+
+```javascript
+export const PhotoCard = ({id}) => {
+  const key = `like-${id}`
+// Al useState le pasamos una función
+const [liked, setLiked] = useState(() => {
+  try {
+    const like = window.localStorage.getItem(key)
+    return like
+  } catch (e) {
+    return false
+  }
+})
+
+// Una función para setear el local storage
+  const setLocalStorage = value => {
+    try {
+      window.localStorage.setItem(key, value)
+      setLiked(value)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  // En el botón
+  return (
+    <Button onClick={() => setLocalStorage(!liked)}>
+      <Icon size='32px' />
+    </Button>
+  )
+}
+```
+
+Y tenemos que asegurarnos que a la ListOfPhotoCards al componente PhotoCard le pasemos el id
+
+```javascript
+export const ListOfPhotoCards = () => {
+  return (
+    <ul>
+      {
+        [1, 2, 3].map(id => <PhotoCard key={id} id={id}/>)
+      }
+    </ul>
+  )
+}
+
+```
+
 ## Custom Hooks: useNearScreen y useLocalStorage
+
+Separando las funcionalidades en hooks y en su propia carpeta para seguir con mejores prácticas.
+
+El hook de useLocalStorage quedaría así:
+
+```javascript
+const useLocalStorage = (key, initialValue) => {
+  const [storedValue, setValue] = useState(() => {
+    try {
+      const item = window.localStorage.getItem(key)
+      return item !== null ? JSON.parse(item) : initialValue
+    } catch(e) {
+      return initialValue
+    }
+  })
+
+  const setLocalStorage = value => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value))
+      setValue(value)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  return [storedValue, setLocalStorage]
+}
+```
+
+Y en el componente PhotoCard
+
+```javascript
+export const PhotoCard = ({id}) => {
+  //...
+  const key = `like-${id}`
+  const [liked, setLiked] = useLocalStorage(key, false)
+
+  // Y en el botton
+  return (
+    <Button onClick={() => setLiked(!liked)}>
+      <Icon size='32px' />
+    </Button>
+  )
+}
+```
+
+Estos Hooks deben ir en su propio archivo y carpeta... creamos la carpeta hooks y un archivo useLocalStorage y allí creamos el hook, en photo card importamos useLocalStorage igual con el Intersection Observer.
+
+El useNearScreen.js
+
+```javascript
+import { useEffect, useState, useRef } from 'react'
+
+export const useNearScreen = () => {
+  const element = useRef(null)
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    Promise.resolve(
+      typeof window.IntersectionObserver !== 'undefined'
+        ? window.IntersectionObserver
+        : import('intersection-observer')
+    ).then(() => {
+      const observer = new window.IntersectionObserver((entries) => {
+        const {isIntersecting} = entries[0]
+        if (isIntesecting) {
+          setShow(true)
+          observer.disconect()
+        }
+      })
+      observer.observe(element.current)
+    })
+  }, [element])
+
+  return [show, element]
+}
+```
+
+Para utilizar el useNearScreen debemos importarlo
+
+```javascript
+import { useNearScreen } from '../../hooks/useNearScreen'
+
+export const PhotoCard = () => {
+  //...
+  const [show, element] = useNearScreen()
+}
+```
+
+Así podemos reutilizar estos custom hooks en nuestra aplicación en diferentes lados de la misma y separar la lógica de la aplicación de sus componentes.
 
 # GraphQL y React Apollo
 
