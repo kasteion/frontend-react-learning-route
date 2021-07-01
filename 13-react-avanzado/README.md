@@ -1283,7 +1283,253 @@ Así podemos reutilizar estos custom hooks en nuestra aplicación en diferentes 
 
 ## ¿Qué es GraphQL y ReactApollo? Inicializando React Apollo Client y primer HoC
 
+GraphQL es un lenguaje creado por facebook que nos permite recuperar los datos que necesitamos en nuestra aplicación. Nos permite describir nuestros datos, indicando cada campo que tipo tiene y de esta forma las validaciones ocurriran tanto en el cliente como en el servidor.
+
+Podemos recuperar justo la información que necesitamos para optimizar los recursos de nuestra red. Y también vamos a tener resultados predecibles porque nosotros mismos vamos a definir que es lo que necesitamos para nuestra aplicación.
+
+```
+{
+  hero {
+    name
+    height
+    mass
+  }
+}
+```
+
+Podemos pedir lo que necesitamos y no tenemos porque pedir todos los datos que vienen en una API Rest y luego filtrarlos en el cliente. 
+
+GraphQL no sustituye las REST APIs, porque GraphQL es un lenguaje que se puede conectar a cualquier tipo de API.
+
+- GraphQL --> Es un Lenguaje | REST --> Es una Arquitectura
+- GraphQL --> Un sólo endpoint | REST --> Múltiples endpoints
+- GraphQL --> Fetching justo | REST --> Over y underfetching
+- GraphQL --> Conexión a otras APIs | REST --> Conexión directa con base de datos
+
+**React Apollo**
+
+Apollo es un cliente que nos permite conectarnos a un servidor de GraphQL. Y React Apollo es el mismo cliente con las conexiones perfectas con la biblioteca React.
+
+1. Instalando dependencias
+
+- apollo-boost: Para iniciar nuestra conexión con un servidor de graphql muy rápidamente y sin configuración.
+- react apollo: Integración de react con el cliente de apollo.
+- graphql
+
+> npm install --save apollo-boost react-apollo graphql 
+
+En el punto de entrada de nuestra aplicación debemos configurar para conectarnos a nuestro servidor. El punto de entrada es el index.js
+
+```javascript
+import React from 'react'
+import ReactDOM from 'react-dom'
+// Importamos unas librearías para conectarnos
+import ApolloClient from 'apollo-boost'
+// Este será un componente en el que envolveremos nuestra aplicación
+import { ApolloProvider } from 'react-apollo'
+import { App } from './App'
+
+// Tenemos que iniciar el ApolloCliente, este client lo vamos a utilizar en el ApolloProvider
+const client = new ApolloClient({
+  uri: 'https://localhost:3500/graphql'
+
+})
+
+ReactDOM.render(
+  <ApolloProvider client={client}>
+    <App />
+  </ApolloProvider>, 
+  document.getElementById('root'))
+```
+
+Una Query
+```
+query getPhotos {
+  photos {
+    id
+    categoryId
+    src
+    likes
+    userId
+    liked
+  }
+}
+```
+
+Ahora la primera query que debemos hacer será en la ListOfPhotoCards...
+
+```javascript
+import React from 'react'
+import { PhotoCard } from '../PhotoCard'
+// Importamos graphql de react-apollo
+import { graphql } from 'react-apollo'
+// Importamos gql para que nos permita escribir las queries como string y que apollo las entienda
+import { gql } from 'apollo-boost'
+
+const withPhotos = graphql(gql`
+  query getPhotos {
+  photos {
+    id
+    categoryId
+    src
+    likes
+    userId
+    liked
+  }
+  }
+`)
+
+export const ListOfPhotoCards = () => {
+  return (
+    <ul>
+      {
+        [1, 2, 3, 4, 5, 6, 7].map(id => <PhotoCard key={id} id={id} />)
+      }
+    </ul>
+  )
+}
+```
+
+A este patron:
+
+```javascript
+const withPhotos = graphql(gql`
+  query getPhotos {
+  photos {
+    id
+    categoryId
+    src
+    likes
+    userId
+    liked
+  }
+  }
+`)
+```
+
+Se le llama componente de orden superior ya que es una función que se le pasa un componente como parametros y devuelve otro componente con mejoras o props inyectdas.
+
+Vamos a envolver el componete ListOfCards
+
+```javascript
+// Los imports...
+
+const withPhotos = graphql(gql`
+  query getPhotos {
+  photos {
+    id
+    categoryId
+    src
+    likes
+    userId
+    liked
+  }
+  }
+`)
+
+// Le quitamos el export y le cambiamos el nombre a ListOfPhotoCardsComponent
+//const ListOfPhotoCardsComponent = (props) => {
+  //console.log(props)
+const ListOfPhotoCardsComponent = ({ data: { photos = [] } } = {})
+  return (
+    <ul>
+      {
+        photos.map(photo => <PhotoCard key={photo.id} id={...photo} />)
+      }
+    </ul>
+  )
+}
+
+export const ListOfPhotoCards = withPhotos(ListOfPhotocardsComponent)
+```
+
+**Un Aporte con respect a los hooks**
+
+> npm install apollo-boost @apollo/react-hooks graphql
+
+En el index.js
+
+```javascript
+// Dependencies
+import React from 'react'
+import ReactDOM from 'react-dom'
+import ApolloClient from 'apollo-boost'
+import { ApolloProvider } from '@apollo/react-hooks'
+
+// Components
+import { App } from './App'
+
+const client = new ApolloClient({
+  uri: 'https://petgram-server-jrmfsd-okxluew9o.now.sh/graphql'
+})
+
+ReactDOM.render(
+  // eslint-disable-next-line react/jsx-filename-extension
+  <ApolloProvider client={client}>
+    <App />
+  </ApolloProvider>,
+  document.getElementById('app')
+)
+```
+
+En ListOfPhotoCards
+
+```javascript
+import React from 'react'
+
+import { useQuery } from '@apollo/react-hooks'
+import { gql } from 'apollo-boost'
+import { PhotoCard } from '../PhotoCard'
+import { DotSpinner } from '../Spinner'
+
+const getPhotos = gql`
+  query getPhotos {
+    photos {
+      id
+      categoryId
+      src
+      likes
+      userId
+      liked
+    }
+  }
+`
+
+export const ListOfPhotoCards = () => {
+  const { loading, error, data } = useQuery(getPhotos)
+
+  if (loading) return <DotSpinner />
+  if (error) return <p>Error</p>
+
+  return (
+    <ul>
+      {data.photos.map((photoCard, id) => (
+        <PhotoCard key={id} {...photoCard} />
+      ))}
+    </ul>
+  )
+}
+```
+
 ## Parámetros para un query con GraphQL
+
+Derrepente quiero poder filtrar por categoría.
+
+```javascript
+// Aquí añadimos a la Query que vamos a filtrar por categoria, entonces les pasamos un categoryId de tipo ID.
+const getPhotos = gql`
+  query getPhotos($categoryId: ID) {
+    photos(categoryId: $categoryId) {
+      id
+      categoryId
+      src
+      likes
+      userId
+      liked
+    }
+  }
+`
+```
 
 ## Usar render Props para recuperar una foto
 

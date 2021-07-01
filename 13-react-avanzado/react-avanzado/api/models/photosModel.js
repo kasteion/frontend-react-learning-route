@@ -1,10 +1,12 @@
 import db from "../adapter.js";
 
 export function find({ id, favs = [] }) {
-  const photo = db
-    .get("photos")
-    .find({ id: +id })
-    .value();
+  const { photos } = db.data
+  const photo = photos.find(p => p.id === id).value()
+  // const photo = db
+  //   .get("photos")
+  //   .find({ id: +id })
+  //   .value();
   return {
     ...photo,
     liked: favs.includes(id.toString()),
@@ -40,7 +42,8 @@ export function list({ categoryId, ids, favs = [] }) {
       .filter((photo) => ids.includes(photo.id.toString()))
       .value();
   } else {
-    photos = db.get("photos").value();
+    photos = db.data.photos
+    //photos = db.get("photos").value();
   }
 
   return photos.map((photo) => ({

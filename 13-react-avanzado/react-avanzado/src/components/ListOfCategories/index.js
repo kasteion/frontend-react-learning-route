@@ -1,25 +1,59 @@
 import React, { useState, useEffect } from 'react'
+import { BsCaretLeftFill, BsCaretRightFill } from 'react-icons/bs'
+import ScrollMenu from 'react-horizontal-scrolling-menu'
+import { useCategoriesData } from '../../hooks/useCategoriesData'
 import { Category } from '../Category'
-import { List, Item } from './styles'
+import { Button, ItemContainer, ListContainer } from './styles'
 
 export const ListOfCategories = () => {
-  const [categories, setCategories] = useState([])
+  const [showFixed, setShowFixed] = useState(false)
+  const { categories, loading } = useCategoriesData()
 
   useEffect(() => {
-    window.fetch('http://localhost:3500/categories')
-      .then(res => res.json())
-      .then(data => setCategories(data))
-  }, [])
+    const onScroll = e => {
+      const newShowFixed = window.scrollY >= 200
+      showFixed !== newShowFixed && setShowFixed(newShowFixed)
+    }
+    document.addEventListener('scroll', onScroll)
+    return () => document.removeEventListener('scroll', onScroll)
+  }, [showFixed])
+
+  const renderList = (fixed) => (
+    <ListContainer fixed={fixed}>
+      <ScrollMenu
+        data={
+          categories.map(category =>
+            <ItemContainer key={category.id}>
+              <Category {...category} />
+            </ItemContainer>
+          )
+        }
+        arrowLeft={
+          <Button>
+            <BsCaretLeftFill />
+          </Button>
+        }
+        arrowRight={
+          <Button>
+            <BsCaretRightFill />
+          </Button>
+        }
+      />
+    </ListContainer>
+  )
+
+  if (loading) {
+    return <h1>Loading...</h1>
+  }
 
   return (
-    <List>
+    <>
       {
-        categories.map(category =>
-          <Item key={category.id}>
-            <Category {...category} />
-          </Item>
-        )
+        renderList()
       }
-    </List>
+      {
+        showFixed && renderList(true)
+      }
+    </>
   )
 }
