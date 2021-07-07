@@ -1407,7 +1407,7 @@ const withPhotos = graphql(gql`
 `)
 ```
 
-Se le llama componente de orden superior ya que es una función que se le pasa un componente como parametros y devuelve otro componente con mejoras o props inyectdas.
+Se le llama componente de orden superior ya que es una función que se le pasa un componente como parametros y devuelve otro componente con mejoras o props inyectadas.
 
 Vamos a envolver el componete ListOfCards
 
@@ -1443,7 +1443,7 @@ const ListOfPhotoCardsComponent = ({ data: { photos = [] } } = {})
 export const ListOfPhotoCards = withPhotos(ListOfPhotocardsComponent)
 ```
 
-**Un Aporte con respect a los hooks**
+**Un Aporte con respecto a los hooks**
 
 > npm install apollo-boost @apollo/react-hooks graphql
 
@@ -1531,16 +1531,487 @@ const getPhotos = gql`
 `
 ```
 
+Entonces aquí la idea es pasar el categoryId como una prop del componente ListOfPhotoCards, en App.js
+
+```javascript
+import React from 'react'
+import { ListOfCategories } from './components/ListOfCategories'
+import { GlobalStyle } from './styles/GlobalStyles'
+import { ListOfPhotoCards } from './components/ListOfPhotoCards'
+import { Logo } from './components/Logo'
+
+export const App = () => {
+  return (
+    <>
+      <GlobalStyle />
+      <Logo />
+      <ListOfCategories />
+      <ListOfPhotoCards categoryId={2}/>
+    </>
+  )
+}
+```
+
+Aquí se puede crear una carpeta llamada hoc (high order compoente) y dentro de esta un archivo llamado withPhotos.js en el que se puede colocar lo de graphql.
+
+```javascript
+import { graphql } from 'react-apollo'
+import { gql } from 'apollo-boost'
+
+export const withPhotos = graphql(gql`
+  query getPhotos($categoryId: ID) {
+    photos(categoryId: $categoryId){
+      id
+      categoryId
+      src
+      likes
+      userId
+      liked
+    }
+  }
+`)
+```
+
+Luego desde ListOfPhotoCards se puede 
+
+```javascript
+// Los imports...
+import { withPhotos } from '../../hoc/withphotos';
+
+const ListOfPhotoCardsComponent = ({ data: { photos = [] } } = {})
+  return (
+    <ul>
+      {
+        photos.map(photo => <PhotoCard key={photo.id} id={...photo} />)
+      }
+    </ul>
+  )
+}
+
+export const ListOfPhotoCards = withPhotos(ListOfPhotocardsComponent)
+```
+
+También se puede extraer el concepto de container, un container sería un objeto que hace el fetching de nuestros datos. Crearíamos una carpeta container y dentro un container llamado ListOfPhotoCards.js
+
+```javascript
+import { withPhotos } from '../../hoc/withPhotos'
+import ListOfPhotoCardsComponent from '../components/ListOfPhotoCards'
+
+export ListOfPhotoCards = withPhotos(ListOfPhotoCardsComponent)
+```
 ## Usar render Props para recuperar una foto
 
-## Refactoriznaod y usando variables de loading y error
+El patron que vimos es utilizar hoc para recuperar los datos y envolver un componente para inyectar estos datos y pasarselo por props.
 
+Existe otro patrón, ahora es el más común y se llama render props. Las render props lo que hacen es tomar la prop especial Children y en lugar de renderizar un elemento como hariamos normalmente va a renderizar una función. Esta función lo que debe devolver es el componente que queremos renderizar. La gracia está en los parametros que recibe esta función. La render props en la función children recibe por parametros la información que queremos inyectar en ese componente que vamos a renderizar.
+
+Primero vamos a cambiar el href del componente PhotoCard
+
+```javascript
+return (
+    <Article ref={element}>
+      {
+        show &&
+          <>
+            <ImgWrapper>
+              <a href={`?detail=${id}`}>
+                <div>
+                  <Img src={src} />
+                </div>
+              </a>
+            </ImgWrapper>
+            <Button onClick={() => setLiked(!liked)}>
+              <Icon />{likes} likes!
+            </Button>
+          </>
+      }
+    </Article>
+  )
+```
+
+En el App.js añadiremos el uso de urlParams
+
+```javascript
+import React from 'react'
+import { ListOfCategories } from './components/ListOfCategories'
+import { GlobalStyle } from './styles/GlobalStyles'
+import { ListOfPhotoCards } from './containers/ListOfPhotoCards'
+import { Logo } from './components/Logo'
+// Aqui puedo usar el phtocardwithquery
+import { PhotoCardWithQuery } from '../container/PhotoCardWithQuery'
+
+export const App = () => {
+  // 1. Añadimos urlParams
+  const urlParams = new window.URLSearchParams(window.location.search)
+  // 2. Así podemos obtener el parametro en la url
+  const detailId = urlParams.get('detail')
+  // 3. Solo para mostrar el valor
+  console.log(detailId)
+  return (
+    <>
+      <GlobalStyle />
+      <Logo />
+      {
+        // 4. Ahora si tenemos un detailId 
+        detailId ? <PhotoCardWithQuery id={detailId}/> : 
+        <>
+          <ListOfCategories />
+          <ListOfPhotoCards />
+        </PhotoCardWithQuery>
+      }
+    </h1>
+  )
+}
+```
+
+Creamos otro container en container/PhotoCardWithQuery.js porque query va a ser la petición que queremos hacer
+
+```javascript
+import React from 'react'
+import { PhotoCard } from '../components/PhotoCard'
+import { gql } from 'apollo-boost'
+import { Query } from 'react-apollo'
+
+const query = gql`
+  query getSinglePhoto($id:ID!) {
+    photo(id:$id) {
+      id
+      categoryId
+      src
+      likes
+      userId
+      liked
+    }
+  }
+`
+
+export const PhotoCardWithQuery = ({id}) => (
+  <Query query={query} variables={{ id }}>
+    {
+      ({loading, error, data}) => {
+        const { photo = {} } = data
+        return <PhotoCard {...photo}/>
+      }
+    }
+  </Query>
+)
+```
+## Refactoriznado y usando variables de loading y error
+
+Falta incorporar algunas buenas prácticas a nuestro código para asegurarnos que lo podremos mantener correctamente.
+
+1. Es buena práctica ponerle un nombre descriptivo a los queries... no solo query... lo mismo en el componente de withPhotos estos queries también se podrían mover a su propia carpeta.
+
+```javascript
+// antes const query = gql`
+const GET_SINGLE_PHOTO = gql`
+  query getSinglePhoto($id:ID!) {
+    photo(id:$id) {
+      id
+      categoryId
+      src
+      likes
+      userId
+      liked
+    }
+  }
+`
+```
+
+2. Otra cosa es manejar los estados de loading y error.
+
+```javascript
+if (loading) return <p>Loading...</p>
+if (error) return <p>Error!</p>
+```
+
+3. Otra buena práctica es dejar las render props fuera del componente, para extraerlas podemos hacer esto en PhotoCardWithQuery.js
+
+```javascript
+
+const renderProp = ({loading, error, data}) => {
+  const { photo = {} } = data
+  return <PhotoCard {...photo}/>
+}
+
+export const PhotoCardWithQuery = ({id}) => (
+  <Query query={query} variables={{ id }}>
+    {
+      renderProp
+    }
+  </Query>
+)
+```
+
+**Aporte sobre crear un placeholder**
+
+```javascript
+//...
+import ReactPlaceholder from "react-placeholder"
+import { TextBlock, RectShape, RoundShape } from "react-placeholder/lib/placeholders"
+
+//...
+
+  const photoCardSkeleton = (
+    <React.Fragment>
+      <RectShape color="#eee" style={{ height: "400px", marginBottom: 10 }} />
+      <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+        <RoundShape
+          color="#eee"
+          style={{ width: 50, height: 50, marginLeft: 10, marginRight: 10 }}
+        />
+        <TextBlock color="#eee" rows={1} style={{ width: 120 }} />
+      </div>
+    </React.Fragment>
+  )
+
+return (
+    <Article ref={element}>
+      {show && (
+        <ReactPlaceholder
+          ready={!loading}
+          showLoadingAnimation={true}
+          customPlaceholder={photoCardSkeleton}
+        >
+          <React.Fragment>
+            <a href={`/?detail=${id}`}>
+              <ImgWrapper>
+                <Img src={src} />
+              </ImgWrapper>
+            </a>
+            <Button onClick={() => setLiked(!liked)}>
+              <Icon size="32px" /> {likes} likes!
+            </Button>
+          </React.Fragment>
+        </ReactPlaceholder>
+      )}
+    </Article>
+  )
+```
 ## Usando las mutaciones con los likes
 
+El componente de `mutation` es otro componente importante en una aplicación Apollo. Es un componente React que proporciona una función para ejecutar una mutación de GraphQL para así alterar la data. Además, rastrea el estado de carga, finalización y error de la mutación.
+
+Para esto vamos a extraer el botón de like que tenemos en PhotoCard a nu nuevo componente, así que creamos un folder en src/components/FavButton y dentro un index.js
+
+```javascript
+import React from 'react'
+import { MdFavoriteBorder, MdFavorite } from 'react-icons/md'
+
+export const FavButton = ({ liked, likes, onClick}) => {
+  const Icon = liked ? MdFavorite: MdFavoriteBorder
+  
+  return <Button onClick={onClick}>
+    <Icon size='32px' />{likes} likes!
+  </Button>
+}
+```
+
+Añadimos un archivo Styles.js y lo extraemos del botón de PhotoCard Ahora en PhotoCard importamos favButton y lo cambiamos por el button anterior.
+
+```javascript
+const handelFavClick = () => setLiked(!liked)
+
+return <FavButton liked={liked} likes={likes} onClick={handleFavClick}>
+```
+
+Una vez separado el componente podemos crear nuestra primera mutación. Para ello creamos en la carpeta container un nuevo archivo llamado ToggleLikeMutation.js
+
+```javascript
+import React from 'react'
+import { gql } from 'apollo-boost'
+import { Mutation } from 'react-apollo'
+
+const LIKE_PHOTO = gql`
+mutation likeAnonymousPhoto($input: LikePhoto!) {
+  likeAnonymousPhoto(input: $input) {
+    id,
+    liked,
+    likes
+  }
+}
+`
+
+export const ToggleLikeMutation = ({ children }) => {
+  return <Mutation mutation={LIKE_PHOTO}>
+  { children }
+  </Mutation>
+}
+```
+
+Ahora en el componente PhotoCard importamos el container ToogleLikeMutation
+
+```javascript
+import { ToggleLikeMutation } from '../../container/ToggleLikeMutation'
+
+// El componente lo utilizamos envolviendo el button FavButton
+
+return <ToogleLikeMutation>
+{
+  (toogleLike) => {
+    const handleFavClick = () => {
+      !like && toggleLike({ variables: { input: { id } } } )
+      setLiked(!liked)
+    }
+    return <FavButton liked={liked} likes={likes} onClick={handleFavClick} />
+  }
+}
+</ToogleLikeMutation>
+```
+
+**Un Aporte sobre @apollo/client**
+
+```javascript
+import { useMutation, gql } from '@apollo/client'
+const MUTATION_LIKE_PHOTO = gql`
+mutation likeAnonymousPhoto($input: LikePhoto!) {
+    likeAnonymousPhoto(input: $input) {
+      id,
+      liked,
+      likes
+    }
+  }
+`
+export const useMuationToogleLike = () => {
+  const [mutation, { loading: mutationLoading, error: mutationError }] = useMutation(MUTATION_LIKE_PHOTO)
+  return { mutation, mutationLoading, mutationError }
+}
+```
+
+Para usarlo se hace así:
+
+```javascript
+import React from 'react'
+import { ImgWrapper, Img, Article } from './styles'
+import { useLocalStorage } from '../hooks/useLocalStorage'
+import { useNearScreen } from '../hooks/useNearScreen'
+import { useMuationToogleLike } from '../hooks/useMutationToogleLike'
+import { FavButton } from '../FavButton'
+const DEFAULT_IMAGE = 'https://res.cloudinary.com/midudev/image/upload/w_300/q_80/v1560262103/dogs.png'
+
+export const PhotoCard = ({ id, likes = 0, src = DEFAULT_IMAGE }) => {
+  const [show, element] = useNearScreen()
+  const { mutation, mutationLoading, mutationError } = useMuationToogleLike()
+  const key = `like-${id}`
+  const [liked, setLiked] = useLocalStorage(key, false)
+  const handleFavClick = () => {
+    !liked && mutation({
+      variables: {
+        input: { id }
+      }
+    })
+    setLiked(!liked)
+  }
+  // console.log('{ mutation, mutationLoading, mutationError }', { mutation, mutationLoading, mutationError })
+
+  return (
+    <Article ref={element}>
+      {
+        show && <>
+          <a href={`/?detail=${id}`}>
+            <ImgWrapper>
+              <Img src={src} />
+            </ImgWrapper>
+          </a>
+          <FavButton
+            liked={liked} likes={likes}
+            onClick={handleFavClick} />
+        </>
+      }
+
+    </Article>
+  )
+}
+```
 # Reach Router
 
 ## ¿Qué es Reach Router? Creando la ruta Home
 
+Reach Router es una versión simplificada y mejor optimizada de REact Router, su creador es Ryan Florence el mismo creador de React Router. Se anunció que los dos paquetes se iban a unir, pero su API se va a parecer más a Reach Router. 
+
+Como es una SPA necesitamos una forma de crear rutas sin recargar páginas.
+
+Reach Router es un poco más simple, con mejores prácticas.
+
+Para esto creamos una carpeta src/pages y dentro pondremos todas las páginas de nuestra aplicación.
+
+Home.js
+
+```javascript
+import React from 'react'
+// Importar ListOfCateogories & ListOfPhotoCards también...
+
+export const Home = ({id}) => {
+  return (
+    <>
+      <ListOfCategories />
+      <ListOfPhotoCards categoryId={id}/>
+    </>
+  )
+}
+```
+
+Así instalamos @reach/router
+
+> npm install @reach/router
+
+Un comentario dice que
+
+> npm install @reach/router --legacy-peer-deps
+
+Entonces ya en App.js podemos hacer
+
+```javascript
+//... imports
+// Para determinar las rutas de nuestra aplicación.
+import { Router } from '@reach/router'
+
+export const App = () => {
+  return (
+    <>
+      <GlobalStyle />
+      <Logo />
+      {
+        detailId
+          ? <PhotoCardWithQuery id={detailId} />
+          : <Router>
+            <Home path='/' />
+            <Home path='/pet/:id' />
+          </Router>
+      }
+    </>
+  )
+}
+```
+
+En el ListOfCategories construimos el path
+
+```javascript
+<Category {...category} path={`/pet/${category.id}`}>
+```
+
+Hay que hacer unos cambio en el package.json en el script
+
+```json
+"scripts": {
+  "dev": "webpack-dev-server --history-api-fallback
+}
+```
+
+O en un aporte agregarlo al webpack.config.js hay que agregar el publicPath y el historyApiFallback.
+
+```javascript
+output: {
+    filename: 'app.bundle.js',
+    publicPath: '/'
+  },
+  devServer: {
+    historyApiFallback: {
+      disableDotRule: true
+    },
+    liveReload: true
+  },
+```
 ## Usando Link para evitar recargar la página
 
 ## Creando la página Detail
