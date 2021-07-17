@@ -3,7 +3,8 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 module.exports = {
   output: {
     path: path.resolve(__dirname, 'public'),
-    filename: 'app.bundle.js'
+    filename: 'app.bundle.js',
+    publicPath: '/'
   },
   mode: 'development',
   module: {
@@ -28,6 +29,9 @@ module.exports = {
   ],
   devServer: {
     contentBase: path.join(__dirname, 'public'),
-    compress: true
+    compress: true,
+    historyApiFallback: {
+      disableDotRule: true
+    }
   }
 }

@@ -1,22 +1,33 @@
 import React from 'react'
-import { ListOfCategories } from './components/ListOfCategories'
+import { Router } from '@reach/router'
+import Context from './Context'
 import { GlobalStyle } from './styles/GlobalStyles'
-import { ListOfPhotoCards } from './containers/ListOfPhotoCards'
 import { Logo } from './components/Logo'
-import { PhotoCardWithQuery } from './containers/PhotoCardWithQuery'
+import { Home } from './pages/Home'
+import { Detail } from './pages/Detail'
+import { User } from './pages/User'
+import { Favs } from './pages/Favs'
+import { NotRegisteredUser } from './pages/NotRegisteredUser'
+import { NavBar } from './components/NavBar'
 
 export const App = () => {
-  const urlParams = new window.URLSearchParams(window.location.search)
-  const detailId = urlParams.get('detail')
   return (
     <>
       <GlobalStyle />
       <Logo />
-      {
-        detailId
-          ? <PhotoCardWithQuery id={detailId} />
-          : <><ListOfCategories /><ListOfPhotoCards /></>
-      }
+      <Router>
+        <Home path='/' />
+        <Home path='/pet/:categoryId' />
+        <Detail path='/detail/:detailId' />
+      </Router>
+      <Context.Consumer>
+        {
+          ({ isAuth }) => isAuth
+            ? <Router><User path='/user' /><Favs path='/favs' /></Router>
+            : <Router><NotRegisteredUser path='/user' /><NotRegisteredUser path='/favs' /></Router>
+        }
+      </Context.Consumer>
+      <NavBar />
     </>
   )
 }

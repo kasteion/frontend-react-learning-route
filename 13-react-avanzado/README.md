@@ -2014,35 +2014,1451 @@ output: {
 ```
 ## Usando Link para evitar recargar la página
 
+Utilizaremos el componente `Link` para hacer que nuestros enlaces no hagan que la página se recarge y funcione como una SPA. Recuerda siempre que puedas utilizar `Link` en lugar de `a` para tener una mejor experiencia de usuario y que no recargue la página.
+
+En el styles.js del componente Category podemos hacer lo siguiente:
+
+```javascript
+import styled from 'styled-components'
+// Link da las mismas funcionalidades que anchor pero sin recargar.
+import { Link } from '@reach/router' 
+
+// styled lo podemos usar así con cualquier componente que acepte classname
+export const Anchor = styled(Link)`
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  text-decoration: none;
+  width: 75px;
+`
+```
+
+Entonces en el index.js del componente ya podemos hacerlo así:
+
+```javascript
+import React from 'react'
+import { Anchor, Image } from './styles'
+
+const DEFAULT_IMAGE = 'https://i.imgur.com/dJa0Hpl.jpg'
+
+// path = '#' para que no de un error :P
+export const Category = ({ cover = DEFAULT_IMAGE, path = '#', emoji = '?' }) => (
+  { /*Cambiamos el href por to */}
+  <Anchor to={path}>
+    <Image src={cover} />
+    {emoji}
+  </Anchor>
+)
+```
+
+Recomendaciones...
+
+```javascript
+import styled from 'styled-components'
+// Importarlo así
+import { Link as LinkRouter } from '@reach/router' 
+
+// Llamarle Link para tener claro que es...
+export const Link = styled(LinkRouter)`
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  text-decoration: none;
+  width: 75px;
+`
+```
+
+Hacer lo mismo en el link del logo
+
 ## Creando la página Detail
+
+Creamos la página Detail en src/pages/Detail.js
+
+```javascript
+import React from 'react'
+import { PhotoCardWithQuery } from '../container/PhotoCardWithQuery'
+
+export const Detail = ( { detailId } ) => (
+  <PhotoCardWithQuery id={detailId}>
+)
+```
+
+Y en el App.js
+
+```javascript
+import { Detail } from './pages/Detail'
+
+export const App = () => {
+  return (
+    <>
+      <GlobalStyle />
+      <Logo />
+      <Router>
+        <Home path='/' />
+        <Home path='/pet/:categoryId' />
+        <Detail path='/detail/:detailId' />
+      </Router>
+    </>
+  )
+}
+```
+
+En la PhotoCard hay que cambiar el anchor y el href para que mande a la ruta correcta.
 
 ## Agregando un NavBar a nuestra app
 
+Vamos a agregar un NavBar en la parte de abajo de nuestra aplicación.
+
+Creamos src/components/NavBar/index.js
+
+```javascript
+import React from 'react'
+
+export const NavBar = () => {
+  return (
+    <nav>
+      <button>Home</button>
+      <button>Favs</button>
+      <button>User</button>
+    </nav>
+  )
+}
+```
+
+Este componente ya lo podríamos usar en la App.js
+
+```javascript
+import { NavBar } from './components/NavBar'
+
+export const App = () => {
+  return (
+    <>
+      <GlobalStyle />
+      <Logo />
+      <Router>
+        <Home path='/' />
+        <Home path='/pet/:categoryId' />
+        <Detail path='/detail/:detailId' />
+      </Router>
+      <NavBar />
+    </>
+  )
+}
+```
+
+Creamos un archivo styled.js para el NavBar
+
+```javascript
+import styled from 'styled-components'
+
+export const Nav = styled.nav`
+  align-items: center;
+  background: #fcfcfc;
+  border-top: 1px solid #e0e0e0;
+  bottom: 0;
+  display: flex;
+  height: 50px;
+  justify-content: space-around;
+  left: 0;
+  margin: 0 auto;
+  max-width: 500px;
+  position: fixed;
+  right: 0;
+  width: 100%;
+  z-index: 1000;
+`
+```
+
+right 0, left 0 y margin 0 auto hace que quede todo centrado.
+
+```javascript
+import React from 'react'
+import { Nav } from './styles'
+
+export const NavBar = () => {
+  return (
+    <Nav>
+      <button>Home</button>
+      <button>Favs</button>
+      <button>User</button>
+    </Nav>
+  )
+}
+```
+
+Ahora siempre en los styles.js
+
+```javascript
+import { Link as LinkRouter } from '@reach/router'
+
+export const Link = styled(LinkRouter)`
+  align-items: center;
+  color: #888;
+  display: inline-flex;
+  height: 100%;
+  justify-content: center;
+  text-decoration: none;
+  width: 100%;
+`
+```
+
+Ahora volvemos a la NavBar
+
+```javascript
+import React from 'react'
+import { Link, Nav } from './styles'
+import { MdHome, MdFavoriteBorder, MdPersonOutline } from 'react-icons/md'
+
+const SIZE = '32px'
+
+export const NavBar = () => {
+  return (
+    <Nav>
+      <Link to='/'><MdHome size={SIZE} /></Link>
+      <Link to='/favs'><MdFavoriteBorder size={SIZE} /></Link>
+      <Link to='/user'><MdPersonOutline size={SIZE} /></Link>
+    </Nav>
+  )
+}
+```
 ## Estilando las páginas activas
 
+La NavBar nos debería indicar de alguna forma en que sección nos encontramos. reach/router nos ayuda de alguna forma al agregarle un coponente aria-current al link que nos lleva a donde estamos actualmente.
+
+Podemos trabajar en los styles del NavBar 
+
+Ahora siempre en los styles.js
+
+```javascript
+import { Link as LinkRouter } from '@reach/router'
+import { fadeIn } from '../../styles/animation';
+
+export const Link = styled(LinkRouter)`
+  align-items: center;
+  color: #888;
+  display: inline-flex;
+  height: 100%;
+  justify-content: center;
+  text-decoration: none;
+  width: 100%;
+
+  // Agregamos esto
+  &[aria-current] {
+    color: #000;
+
+    // Agregamos un pseudo elemento
+    &:after {
+      ${fadeIn({ time: '0.5s'})};
+      content: '.';
+      bottom: 0;
+      font-size: 34px;
+      line-height: 20px;
+    }
+  }
+`
+```
 ## Rutas protegidas
+
+Vamos a trabajar la parte de como mostrar las páginas que solo se pueden mostrar cuando hicimos login.
+
+Creamos la pages/Favs.js y pages/User.js y pages/NotRegisteredUser.js
+
+```javascript
+import React from 'react'
+
+const Favs = () => {
+  return <h1>Favs</h1>
+}
+```
+
+Las 3 iguales que solo retornen un h1 con el nombre de la pagina. Estas 3 paginas las agregamos al App.js
+
+```javascript
+
+1. // UserLogged es un componente con reder prop...
+const UserLogged = ({ children }) => {
+  return children({ isAuth: false })
+}
+
+export const App = () => {
+  return (
+    <>
+      <GlobalStyle />
+      <Logo />
+      <Router>
+        <Home path='/' />
+        <Home path='/pet/:categoryId' />
+        <Detail path='/detail/:detailId' />
+      </Router>
+      <UserLogged>
+        {
+          ({ isAuth }) => isAuth 
+            ? <Router> 
+                <Favs path='/favs' />
+                <User path='/user' />
+              </Router>
+            : <Router>
+                <NotRegisteredUser path='/favs'/>
+                <NotRegisteredUser path='/user'/>
+              </Router>
+        }
+      </UserLogged>
+      <NavBar />
+    </>
+  )
+}
+```
 
 # Gestión de usuarios
 
 ## Introducción a React.Context
 
-## Creación de componente UserForm; y Hook useInputVAlue
+Context API es una característica que tiene React para poder pasar datos en nuestra aplicación sin necesidad de usar las Props.
 
+Para crear un contexto vamos a importar el método `createContext` de la librería React. El contexto que creemos no va a dejar de ser un componente de React, por ello debe llevar mayúscula al inicio.
+
+El Context que creemos nos va a proporcionar 2 componentes:
+- Provider: componente que debe envolver a nuestra aplicación.
+- Consumer: nos va a permitir acceder a las render props que declaremos en el Provider.
+
+Creamos el archivo src/Context.js
+
+```javascript
+// Importamos createContext de react
+import { createContext } from 'react'
+
+// Context es un componente así que lleva mayúscula
+const Context = createContext()
+
+// Exportado y listo para usar
+export default Context
+```
+
+Este Context se usa en el src/index.js para envolver nuestra App
+
+```javascript
+import React from 'react'
+import ReactDOM from 'react-dom'
+import ApolloClient from 'apollo-boost'
+import { ApolloProvider } from '@apollo/react-hooks'
+// Importamos Context
+import Context from './Context'
+import { App } from './App'
+
+const client = new ApolloClient({
+  uri: 'http://localhost:3500/graphql'
+})
+
+ReactDOM.render(
+  <Context.Provider value={ { isAuth: false } }>
+    <ApolloProvider client={client}>
+      <App />
+    </ApolloProvider>
+  </Context.Provider>,
+  document.getElementById('root'))
+```
+
+Ahora regresamos al App.js
+
+```javascript
+// 2. IMportamos el Context
+import Context from './Context'
+
+// 1. Eliminamos esta función porque vamos a utilizar en context
+// const UserLogged = ({ children }) => {
+//   return children({ isAuth: false })
+// }
+export const App = () => {
+  return (
+    <>
+      <GlobalStyle />
+      <Logo />
+      <Router>
+        <Home path='/' />
+        <Home path='/pet/:categoryId' />
+        <Detail path='/detail/:detailId' />
+      </Router>
+      { /*En lugar del componente <UserLogged> usamos <Context.Consumer> que tiene la misma render prop del componente que estabamos usando antes.*/ }
+      <Context.Consumer>
+        {
+          ({ isAuth }) => isAuth 
+            ? <Router> 
+                <Favs path='/favs' />
+                <User path='/user' />
+              </Router>
+            : <Router>
+                <NotRegisteredUser path='/favs'/>
+                <NotRegisteredUser path='/user'/>
+              </Router>
+        }
+      </Context.Consumer>
+      <NavBar />
+    </>
+  )
+}
+```
+
+Ahora para poder cambiar nuestro contexto de forma dinámica en el Context.js
+
+```javascript
+// 1. Importamos React y useState
+import React, { createContext, useState } from 'react'
+
+const Context = createContext()
+
+// Creamos un componente Provider
+const Provider = ({ children }) => {
+  const [isAuth, setIsAuth] = useState(false)
+  const value = {
+    isAuth,
+    activateAuth: () => {
+      setIsAuth(true)
+    }
+  }
+
+  return (
+    <Context.Provider value={value}>
+      { children }
+    </Context.Provider>
+  )
+}
+
+// En lugar de exportar el Context completamente
+// export default Context
+export default {
+  Provider,
+  Consumer: Context.Consumer
+}
+```
+
+Ahora en el src/index.js
+
+```javascript
+// Ya no necesito <Context.Provider value={ { isAuth: false } }> sino que sin el value
+ReactDOM.render(
+  <Context.Provider>
+    <ApolloProvider client={client}>
+      <App />
+    </ApolloProvider>
+  </Context.Provider>,
+  document.getElementById('root'))
+```
+
+Lo que podemos hacer es que la página de NotRegisteredUser nos de una forma de registrarnos así que cambiamos src/pages/NotRegisteredUser.js
+
+```javascript
+import React from 'react'
+// 1. Importamos el Context
+import Context from '../Context'
+
+export const NotRegisteredUser = () => {
+  // 2. Envolvemos lo que renderizamos en el contexto
+  return (
+    <Context.Consumer>
+      {
+        ( { activateAuth }) => {
+          return (
+            <form onSubmit={activateAuth}>
+              <button>Iniciar sesión</button>
+            </form>
+          )
+        }
+      }
+    </Context.Consumer>
+  )
+}
+```
+## Creación de componente UserForm; y Hook useInputValue
+
+Deberíamos tener un formulario completo para que el usuario pueda iniciar sesión y poner toda su información.
+
+Creamos src/component/UserForm/index.js
+
+```javascript
+import React, { useState } from 'react'
+
+export const UserForm = ({ onSubmit }) => {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  return <form onSubmit={onSubmit}>
+    <input placeholder='Email' value={} onChange={e => setEmail(e.target.value)} />
+    <input placeholder='Password' type='password' value={} onChange={e => setPassword(e.target.value)} />
+    <button>Iniciar sesión</button>
+  </form>
+}
+```
+
+Entonces ya la page NotRegisteredUser.js podría quedar así:
+
+```javascript
+import React from 'react'
+import Context from '../Context'
+import { UserForm } from '../components/UserForm'
+
+export const NotRegisteredUser = () => {
+  return (
+    <Context.Consumer>
+      {
+        ( { activateAuth }) => {
+          return (
+            <UserForm onSubmit={activateAuth}/>
+          )
+        }
+      }
+    </Context.Consumer>
+  )
+}
+```
+
+Ahora modifiquemos un poco el UserForm
+
+```javascript
+import React, { useState } from 'react'
+
+// 1. Creamos un hook para simplificar un pcoo como trabajamos con inputs
+
+const useInputVAlue = initialValue => {
+  const [value, setValue] = useState(initialValue)
+  const onChange = e => setValue(e.target.value)
+  return { value, onChange }
+}
+
+
+export const UserForm = ({ onSubmit }) => {
+  // Antes:
+  // const [email, setEmail] = useState('')
+  // Despues:
+  const email = useInputValue('')
+  // Antes:
+  // const [password, setPassword] = useState('')
+  // Despues:
+  const password = useInputValue('')
+
+  // Se puede usar rest operator {...email} porque estamos pasando las props email.value, email.onChange, igual en password.
+  return <form onSubmit={onSubmit}>
+    <input placeholder='Email' {...email} />
+    <input placeholder='Password' type='password' {...password}/>
+    <button>Iniciar sesión</button>
+  </form>
+}
+```
+
+Ahora pues los hooks se pueden sacar a sus propios hooks, creamos el hook useInputValue.js
+
+```javascript
+import { useState } from 'react'
+
+export const useInputValue = initialValue => {
+  const [value, setValue] = useState(initialValue)
+  const onChange = e => setValue(e.target.value)
+  return { value, onChange }
+}
+```
 ## Estilando el formulario
 
+Creamos src/components/UserForm/styles.js
+
+```javascript
+import styled from 'styled-components'
+
+export const Form = styled.form`
+  padding: 16px 0;
+`
+
+export const Input = styled.input`
+  border: 1px solid #ccc
+  border-radius: 3px;
+  margin-bottom: 8px;
+  padding: 8px 4px;
+  display: block;
+  width: 100%
+`
+
+export const Button = styled.button`
+  background: #8d00ff;
+  border-radius: 3px;
+  color: #fff;
+  height: 32px;
+  display: block;
+  width: 100%;
+  text-align: center;
+`
+
+export const Title = styled.h2`
+  font-size: 16px;
+  font-weight: 500;
+  padding: 8px 0;
+`
+```
+
+Ahora el UserForm lo vamos a hacer un poco más general...
+
+```javascript
+import React, { useState } from 'react'
+import { useInputValue } from '../hooks/useInputValue'
+import {Form, Input, Button, Title} from './styles'
+
+//1. Le agregamos un title
+export const UserForm = ({ onSubmit, title }) => {
+  const email = useInputValue('')
+  const password = useInputValue('')
+
+
+  return <><Title>{title}</Title><Form onSubmit={onSubmit}>
+    <Input placeholder='Email' {...email} />
+    <Input placeholder='Password' type='password' {...password}/>
+    <Button>{title}</Button>
+  </Form></>
+}
+```
+
+Y ahora en UserNotRegistered
+
+```javascript
+import React from 'react'
+import Context from '../Context'
+import { UserForm } from '../components/UserForm'
+
+export const NotRegisteredUser = () => {
+  return (
+    <Context.Consumer>
+      {
+        ( { activateAuth }) => {
+          return (
+            <>
+            <UserForm title="Registrarse" onSubmit={activateAuth}/>
+            <UserForm title="Iniciar Sesión" onSubmit={activateAuth}/>
+            </>
+          )
+        }
+      }
+    </Context.Consumer>
+  )
+}
+```
 ## Mutaciones para registro
 
+La mutación es:
+
+```javascript
+mutation signup($input: UserCredentials!) {
+  signup (input: $input)
+} 
+```
+
+Las query variables son:
+
+```javascript
+{
+  "input": {
+    "email": "curso-platzi@gmail.com",
+    "password": "curso"
+  }
+}
+```
+
+Esto da como respuesta un JWT.
+
+Creamos un container/RegisterMutation.js
+
+```javascript
+import React from 'react'
+import { Mutation } from 'react-apollo'
+import { gql } from 'apollo-boost'
+
+const REGISTER = gql`
+  mutation signup($input: UserCredentials!) {
+    signup (input: $input)
+  } 
+`
+
+export const RegisterMutation = ({ children }) => {
+  return <Mutation mutation={REGISTER}>
+    { children }
+  </Mutation>
+}
+```
+
+Ahora pasamos a NotRegisteredUser.js
+
+```javascript
+import React from 'react'
+import Context from '../Context'
+import { UserForm } from '../components/UserForm'
+// 1. Importamos el container
+import { RegisteredMutation } from '../container/RegisterMutation'
+
+export const NotRegisteredUser = () => {
+  return (
+    <Context.Consumer>
+      {
+        ( { activateAuth }) => {
+          // 2. Lo queremos utilizar envolviendo el componente UserForm
+          return (
+            <>
+            <RegisterMutation>
+              (register) => {
+                const onSubmit = () => {
+                  const input = { email, password }
+                  const variables = { input }
+                  // 3. El register es una mutación y devuelve una promesa.
+                  register({ variables }).then(activateAuth)
+                }
+                return <UserForm title="Registrarse" onSubmit={activateAuth}/>
+              }
+            </RegisterMutation>
+
+            <UserForm title="Iniciar Sesión" onSubmit={activateAuth}/>
+            </>
+          )
+        }
+      }
+    </Context.Consumer>
+  )
+}
+```
+
+Hay que cambiar el UserForm/index.js
+
+```javascript
+export const UserForm = ({ onSubmit, title }) => {
+  const email = useInputValue('')
+  const password = useInputValue('')
+
+  // 1. Creamos un handleSubmit que ejecuta el onSubmit y eso va también en el onSubmit del form
+  const handleSubmit = (event) => {
+    // Evitamos que haga su funcionamiento por defecto, que es un post.
+    event.preventDefault()
+    onSubmit({ email: email.value, password: password.value })
+  }
+  return <><Title>{title}</Title><Form onSubmit={handleSubmit}>
+    <Input placeholder='Email' {...email} />
+    <Input placeholder='Password' type='password' {...password}/>
+    <Button>{title}</Button>
+  </Form></>
+}
+```
+
+**Utilizando Hooks**
+
+NotRegisteredUser.js
+
+```javascript
+import React from 'react'
+import Context from '../Context'
+import { UserForm } from '../components/UserForm'
+import { useRegisterMutation } from '../containers/RegisterMutation'
+
+
+export const NotRegisteredUser = () => {
+    const { registerMutation } = useRegisterMutation()
+    
+    return (
+        <Context.Consumer>
+            {
+                ({activateAuth}) => {
+                    const onSubmit = ({email, password}) => {
+                        const input = { email, password }
+                        const variables = { input }
+                        registerMutation({ variables })
+                        .then(activateAuth)
+                    }
+                    return <>
+                        <UserForm onSubmit={onSubmit} title='Registrarse'/>
+                        <UserForm onSubmit={activateAuth} title='Iniciar Sesion'/>
+                    </>
+                }
+            }
+        </Context.Consumer>
+        // <h1>NotRegisteredUser</h1>
+    )
+}
+```
+
+useRegisterMutation.js
+
+```javascript
+import { gql, useMutation } from '@apollo/client'
+
+const REGISTER = gql`
+    mutation signup($input: UserCredentials!){
+        signup(input: $input)
+    }
+`
+export const useRegisterMutation = () => {
+  const [registerMutation] = useMutation(REGISTER)
+
+  return { registerMutation }
+}
+```
 ## Controlar estado de carga y error al registrar un usuario
+
+No estamos controlando mientras se está cargando, realizando o si tiene error la mutación.
+
+Esto se puede solucionar en NotRegisteredUser.js
+
+```javascript
+export const NotRegisteredUser = () => {
+  return (
+    <Context.Consumer>
+      {
+        ( { activateAuth }) => {
+          return (
+            <>
+            <RegisterMutation>
+              {
+                // Register es la mutación pero también se puede recibir { data, loading, error }
+              (register, { data, loading, error}) => {
+                const onSubmit = () => {
+                  const input = { email, password }
+                  const variables = { input }
+                  register({ variables }).then(activateAuth)
+                }
+                // Aqui podemos agarrar el error message y pasarlo como prop al user form
+                const errorMsg = error && 'El usuario ya existe o hay algún problema.'
+                // Pasamos disabled y loading para deshabilitar el userform.
+                return <UserForm disabled={loading} error={errorMsg} title="Registrarse" onSubmit={activateAuth}/>
+              }
+              }
+            </RegisterMutation>
+            <UserForm title="Iniciar Sesión" onSubmit={activateAuth}/>
+            </>
+          )
+        }
+      }
+    </Context.Consumer>
+  )
+}
+```
+
+Este error hay que incluirlo en el index.js del componente UserForm y pues lo estilamos en los estilos
+
+```javascript
+export const Input = styled.input`
+  // Otros estilos
+  &[disabled] {
+    opacity: .3;
+  }
+`
+
+export const Button = styled.button`
+  // Otros estilos
+  &[disabled] {
+    opacity: .3;
+  }
+`
+
+export const Error = styled.span`
+  color: red;
+  font-size: 14px;
+`
+```
+
+A los Input, Button y Form habría que mandarles un disabled={disabled} en sus props.
 
 ## Mutaciones para iniciar sesión
 
+Vamos a hacer el inicio de sesión con un mutation
+
+```javascript
+mutation login($input: UserCredentials!) {
+  login(input: $input)
+}
+```
+
+Con estas query variables
+
+```json
+{
+  "input": {
+    "email": "curso-react@platzi.com",
+    "password": "curso"
+  }
+}
+```
+
+Creamos el archivo src/container/LoginMutation.js
+
+```javascript
+import React from 'react'
+import { Mutation } from 'react-apollo'
+import { gql } from 'apollo-boost'
+
+const LOGIN = gql`
+  mutation login($input: UserCredentials!) {
+    login (input: $input)
+  } 
+`
+
+export const LoginMutation = ({ children }) => {
+  return <Mutation mutation={LOGIN}>
+    { children }
+  </Mutation>
+}
+```
+
+Ahora en el NotRegisteredUser
+
+```javascript
+export const NotRegisteredUser = () => {
+  return (
+    <Context.Consumer>
+      {
+        ( { activateAuth }) => {
+          return (
+            <>
+            <RegisterMutation>
+              {
+               // Aquí esta todo el código anterior...
+              }
+            </RegisterMutation>
+            <LoginMutation>
+              {
+                // Aquí pues ya con render props
+                (login, { data, loading, error }) => {
+                  const onSubmit = () => {
+                    const input = { email, password }
+                    const variables = { input }
+                    login({ variables }).then(activateAuth)
+                  }
+                // Aqui podemos agarrar el error message y pasarlo como prop al user form
+                  const errorMsg = error && 'La contraseña no es correcta o el usuario no existe'
+                  return <UserForm disabled={loading} error={errorMsg} title="Iniciar Sesión" onSubmit={onSubmit}/>
+                }
+              }
+            </LoginMutation>
+            </>
+          )
+        }
+      }
+    </Context.Consumer>
+  )
+}
+```
 ## Persistiendo datos en Session Storage
 
+Cada vez que refrescamos nuestra aplicación se pierde la sesión y eso es un problema. Queremos evitar esto y que recuerde la aplicación que este usuario ya esta autentificado.
+
+```javascript
+export const NotRegisteredUser = () => {
+  return (
+    <Context.Consumer>
+      {
+        ( { activateAuth }) => {
+          return (
+            <>
+            <RegisterMutation>
+              {
+               // Aquí esta todo el código anterior...
+              }
+            </RegisterMutation>
+            <LoginMutation>
+              {
+                (login, { data, loading, error }) => {
+                  const onSubmit = () => {
+                    const input = { email, password }
+                    const variables = { input }
+                    // Cuando hacemos uso del login mutation nos devuelve una promesa, aquí podemos hacer uso del local storage.
+                    login({ variables }).then(({ data }) => {
+                      const { login } = data
+                      // En el signup sería
+                      // const { signup } = data
+                      activateAuth(login)
+                    })
+                  }
+                  const errorMsg = error && 'La contraseña no es correcta o el usuario no existe'
+                  return <UserForm disabled={loading} error={errorMsg} title="Iniciar Sesión" onSubmit={activateAuth}/>
+                }
+              }
+            </LoginMutation>
+            </>
+          )
+        }
+      }
+    </Context.Consumer>
+  )
+}
+```
+
+En el Context.js hay que cambiar el metodo activateAuth porque ahora le llega como parametro el token...
+
+```javascript
+import React, { createContext, useState } from 'react'
+
+export const Context = createContext()
+
+const Provider = ({ children }) => {
+  // El valor inicial de isAuth debe ser una función que busque la data en el sessionStorage.
+  // Antes:
+  // const [isAuth, setIsAuth] = useState(false)
+  // Despues:
+  const [isAuth, setIsAuth ] = useState(() => { 
+    return window.sessionStorage.getItem('token')
+  })
+  const value = {
+    isAuth,
+    // Aquí ahora recibe el token
+    activateAuth: ( token ) => {
+      setIsAuth(true)
+      // Usamos el local storage
+      window.sessionStorage.setItem('token', token)
+    }
+  }
+
+  return (
+    <Context.Provider value={value}>
+      { children }
+    </Context.Provider>
+  )
+}
+```
+
+Ahora en la consola del browser podrías ver el token
+
+> windows.sessionStorage.token
+
+En las Chrome Tools en la pestaña Application podemos limpiar los storage.
+
+En el NotRegisteredUser podemos utilizar el Hook de useContext.
+
+```javascript
+import React, { useContext } from 'react'
+import { Context } from '../Context'
+
+export const NotRegisteredUser = () => {
+  const { activateAuth } = useContext(Context)
+
+  return (
+    { /* Aquí ya no se necesita el componete Context */ }
+    <>
+      {
+        ( { activateAuth } ) => {
+          return (
+            <>
+            <RegisterMutation>
+              {
+               // Aquí esta todo el código anterior...
+              }
+            </RegisterMutation>
+            <LoginMutation>
+              {
+                // Aquí esta el código del Login Mutation...
+              }
+            </LoginMutation>
+            </>
+          )
+        }
+      }
+    </>
+  )
+}
+```
 ## Hacer like como usuario registrado
 
+Un JSON Web Token (JWT) es un estándar abierto para crear tokens y asegurar que el envío de datos es confiable y seguro. Van a ser muy útiles para implementar la lógica de los likes pues solamente los usuarios autentificados podrán dar likes.
+
+Un JWT se conforma de 3 partes:
+
+1. Header: Es un objeto que define qué algoritmo y tipo tiene el token.
+2. Payload: La información que almacenamos en el token.
+3. Verify Signature: Una encriptación del header más el payload más tu llave secreta.
+
+Para utilizar nuestro JWT necesitamso añadirlo al header `authorization` de las peticiones HTTP que hagamos con el texto `Bearer [token]`
+
+La mutación likePhoto debe hacerse con un JWT
+
+```javascript
+mutation likePhoto {
+  likePhoto(input: { id: 1 }) {
+    id,
+    liked,
+    likes
+  }
+}
+```
+
+El JWT va en el HTTP Header
+
+```json
+{
+  "authorization": "Bearer yeJhbGciOiJi..."
+}
+```
+
+En el archivo ToggleLikeMutation.js teníamos la mutación likeAnonymousPhoto:
+
+```javascript
+import React from 'react'
+import { gql } from 'apollo-boost'
+import { Mutation } from 'react-apollo'
+
+// Ahora ya no es likeAnonymousPhoto
+const LIKE_PHOTO = gql`
+mutation likePhoto($input: LikePhoto!) {
+  likePhoto(input: $input) {
+    id,
+    liked,
+    likes
+  }
+}
+`
+```
+
+En el index.js de la aplicación:
+
+```javascript
+// 1. Donde creamos el ApolloClient aparte de la uri necesita un request que es una función
+const client = new ApolloClient({
+  uri: 'https://petgram-server.midudev.now.sh/graphql',
+  request: operation => {
+    // 2. Buscamon el token en el sessionStorage
+    const token = windows.sessionStorage.getItem('token')
+    // 3. Si hay token entonces devolvemos el Bearer token si no pues devolvemos vacío.
+    const authorization = token ? `Bearer ${token}` : ''
+    // 4. Configuramos el contexto con la autorización en el header
+    operation.setContext({
+      headers: {
+        authorization
+      }
+    })
+  }
+})
+```
+
+Ahora, en el componente PhotoCard debemos quitar cualquier cosa que tenga que ver con el local storage para el like...
+
+Ahora... los JWT expiran entonces para asegurarnos de que no tengamos problemas cuando expire el token, esto se hace siempre en el index.js de la aplicación.
+
+```javascript
+const client = new ApolloClient({
+  uri: 'https://petgram-server.midudev.now.sh/graphql',
+  request: operation => {
+    const token = windows.sessionStorage.getItem('token')
+    const authorization = token ? `Bearer ${token}` : ''
+    operation.setContext({
+      headers: {
+        authorization
+      }
+    })
+  },
+  // 1. Hay que añadir un onError para cuando el token expire...
+  onError: error => {
+    const { networkError } = error
+    if (networkError && networkError.result.code === 'invalid_token') {
+      window.sessionStorage.removeItem('token')
+      window.location.href = '/'
+    }
+  }
+})
+```
+
+**Esto viene de un aporte**
+
+```javascript
+import { ApolloProvider, ApolloClient, ApolloLink, from, HttpLink, InMemoryCache } from '@apollo/client'
+import { onError } from '@apollo/client/link/error'
+
+const authMiddleware = new ApolloLink((operation, forward) => {
+  const token = sessionStorage.getItem('token')
+  if (token) {
+    operation.setContext({
+      headers: {
+        authorization: 'Bearer ' + sessionStorage.getItem('token'),
+      },
+    })
+  }
+  return forward(operation);
+})
+
+const errorMiddleware = onError(
+  ({ networkError }) => {
+    if (networkError && networkError.result.code === 'invalid_token') {
+      sessionStorage.removeItem('token')
+      window.location = '/user'
+    }
+  }
+)
+
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  link: from([
+    errorMiddleware,
+    authMiddleware,
+    new HttpLink({
+      uri: 'https://petgram-server-hmcpzh3ov.vercerl.app/graphql',
+    })
+  ])
+})
+```
 ## Mostrar favoritos y solucionar fetch policy
 
+En la ruta favs debería mostrar los favoritos, con graphQl tenemos una forma de recuperar los favoritos:
+
+```javascript
+query getFavs {
+  favs {
+    id
+    categoryId
+    src
+    likes
+    userId
+  }
+}
+```
+
+Con el HTTP Header
+
+```json
+{
+  "authorization": "bearer yeJhbGciOiJi..."
+}
+```
+
+Creamos un nuevo Container en src/container/GetFavorites.js
+
+```javascript
+import React from 'react'
+import { Query } from 'react-apollo'
+import { gql } from 'apollo-boost'
+
+const GET_FAVS = gql`
+  query getFavs {
+  favs {
+    id
+    categoryId
+    src
+    likes
+    userId
+  }
+}
+`
+
+const renderProp = ({ loading, error, data }) => {
+  if (loading) return <p>Loading...</p>
+  if (error) return <p>Error!</p>
+  const { favs } = data
+  return favs.map(fav => <img key={fav.id} src={fav.src} />)
+}
+
+export const FavsWithQuery = () => (
+  <Query query={GET_FAVS}>
+    { renderProp }
+  </Query>
+)
+```
+
+Ahora en Favs.js
+
+```javascript
+import React from 'react'
+import { FavsWithQuery} from '../container/GetFavorites'
+
+export const Favs = () => (
+  <>
+    <h1>Favs</h1>
+    <FavsWithQuery />
+  </>
+)
+```
+
+Aqui solo se ve la lista de imagenes... pero queremos utilizar hacerlo que se vea mejor, así que creamos un componente llamado src/components/ListOfFavs/index.js y un styles.js
+
+```javascript
+import styled from 'styled-components'
+import { Link as LinkRouter } from '@reach/router'
+
+export const Link = styled(LinkRouter)`
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, .3);
+  display: inline-block;
+  margin: 1%;
+  overflow: hidden;
+  position: relative;
+  width: 31.33%;
+  &:after {
+    content: '';
+    display: block;
+    padding-bottom: 100%;
+  }
+`
+
+export const Grid = styled.div`
+  padding-top: 32px;
+`
+
+export const Image = styled.img`
+  object-fit: cover;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+`
+```
+
+```javascript
+import React from 'react'
+import { Grid, Image, Link} from './styles'
+
+export const ListOfFavs = ({favs}) => {
+  return <Grid>
+    {
+      favs.map(fav => <Link key={fav.id} to={`/detail/${fav.id}`}>
+          <img src={fav.src} />
+        </Link>
+      )
+    }
+  </Grid>
+}
+```
+
+Ahora simpre en el GetFavorites.js
+
+```javascript
+import React from 'react'
+import { Query } from 'react-apollo'
+import { gql } from 'apollo-boost'
+// 1. Importamos aquí el list of favs
+import { ListOfFavs } from '../components/ListOfFavs'
+
+const GET_FAVS = gql`
+  query getFavs {
+  favs {
+    id
+    categoryId
+    src
+    likes
+    userId
+  }
+}
+`
+
+const renderProp = ({ loading, error, data }) => {
+  if (loading) return <p>Loading...</p>
+  if (error) return <p>Error!</p>
+  const { favs } = data
+  // 2. Ahora podemos utilizar ListOfFavs aquí
+  return <ListOfFavs favs={favs} />
+}
+
+export const FavsWithQuery = () => (
+  { /* fetchPolicy='network-only' es para que Apollo no use la cache... sino que siempre busque tambien se puede usar fetchPolicy=‘cache-and-network */ }
+  <Query query={GET_FAVS} fetchPolicy='network-only'>
+    { renderProp }
+  </Query>
+)
+```
+
+**Ahora con hooks**
+
+```javascript
+import { useQuery } from '@apollo/react-hooks';
+import qgl from 'graphql-tag';
+
+
+const GET_FAVORITES = qgl`
+query getFavs {
+    favs {
+      id
+      categoryId
+      src
+      likes
+      userId
+    }
+  }
+`;
+
+
+const useGetFavorites = () => {
+  const { data, error, loading } = useQuery(GET_FAVORITES, { fetchPolicy: 'cache-and-network' });
+  return { data, loading, error };
+};
+
+
+export default useGetFavorites;
+```
+
 ## Cerrar Sesión
+
+Ahora pues regresamos al Context.js
+
+```javascript
+import React, { createContext, useState } from 'react'
+
+const Context = createContext()
+
+const Provider = ({ children }) => {
+  const [isAuth, setIsAuth ] = useState(() => { 
+    return window.sessionStorage.getItem('token')
+  })
+  const value = {
+    isAuth,
+    activateAuth: ( token ) => {
+      setIsAuth(true)
+      window.sessionStorage.setItem('token', token)
+      // La siguiente linea viene de un comentario... 
+      __APOLLO_CLIENT__.resetStore()
+    },
+    // Le agregamos para quitar la autenticación
+    removeAuth: () => {
+      setIsAuth(false)
+      window.sessionStorage.removeItem('token')
+      // La siguiente linea viene de un comentario... 
+      __APOLLO_CLIENT__.resetStore()
+    }
+  }
+
+  // Resto del código
+}
+```
+
+Ahora en pages/User.js
+
+```javascript
+import React, { useContext } from 'react'
+import { Context } from '../Context'
+
+export const User = () => {
+  const { removeAuth } = useContext(Context)
+  return <>
+    <h1>User</h1>
+    <button onClick={removeAuth}>Cerrar sesión</button>
+  </>
+}
+```
+
+Ahora creamos un componente llamado SubmitButton en src/components/SubmitButton
+
+En styles.js
+
+```javascript
+import styled from 'styled-components'
+
+export const Button = styled.button`
+  background: #8d00ff;
+  border-radius: 3px;
+  color: #fff;
+  height: 32px;
+  display: block;
+  width: 100%;
+  text-align: center;
+  &[disabled] {
+    opacity: .3;
+  }
+`
+```
+
+En index.js
+
+```javascript
+import React from 'react'
+import { Button } from './styles'
+
+export const SubmitButton = ({ children, disabled, onClick }) => {
+  return <Button disabled={disabled} onClick={onClick}>{children}</Button>
+}
+```
+
+Y ahora en el componente UserForm y User.js puedo utilizar directamente el componente SubmitButton de los componentes en lugar de los estilos...
 
 # Mejores prácticas, SEO y recomendaciones
 

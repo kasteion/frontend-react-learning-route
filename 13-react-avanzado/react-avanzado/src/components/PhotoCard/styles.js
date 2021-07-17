@@ -1,4 +1,5 @@
 import styled from 'styled-components'
+import { Link as LinkRouter } from '@reach/router'
 import { fadeIn } from '../../styles/animation'
 
 export const ImgWrapper = styled.div`
@@ -24,3 +25,5 @@ export const Img = styled.img`
 export const Article = styled.article`
   min-height: 200px;
 `
+
+export const Link = styled(LinkRouter)``

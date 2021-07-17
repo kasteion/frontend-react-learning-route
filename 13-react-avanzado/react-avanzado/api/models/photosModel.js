@@ -41,7 +41,6 @@ export function list ({ categoryId, ids, favs = [] }) {
   } else if (ids) {
     photos = db.data.photos
       .filter((photo) => ids.includes(photo.id.toString()))
-      .value()
   } else {
     photos = db.data.photos
   }
