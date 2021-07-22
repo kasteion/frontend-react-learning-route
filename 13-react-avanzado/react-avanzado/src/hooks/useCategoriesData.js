@@ -6,7 +6,7 @@ export const useCategoriesData = () => {
 
   useEffect(() => {
     setLoading(true)
-    window.fetch('http://localhost:3500/categories')
+    window.fetch('https://kasteion-petgram-api.herokuapp.com/categories')
       .then(res => res.json())
       .then(data => {
         setCategories(data)

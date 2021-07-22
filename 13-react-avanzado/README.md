@@ -694,7 +694,7 @@ No se puede utilizar getSnapshotBeforeUpdate, componentDidCatch por ahora.
 
 Y los más importantes y que se utilizarán en el 90% de los casos son:
 
-- useState: Para añadir estado locar en el componente.
+- useState: Para añadir estado local en el componente.
 
 ```javascript
 import React, { useState } from 'react'
@@ -3464,20 +3464,584 @@ Y ahora en el componente UserForm y User.js puedo utilizar directamente el compo
 
 ## Último retoques a las rutas de nuestra aplicación
 
+Creamos una src/pages/NotFound.js
+
+```javascript
+import React from 'react'
+
+export const NotFound = () => (
+  <h1>Esta página no existe! :(</h1>
+)
+```
+
+Vamos App.js
+
+```javascript
+// 1. Simplificamos esto utilizando el hook useContext
+import  React, { useContext } from 'react'
+// 2. Para esto necesitamos importar el context así
+import { Context } from './Context'
+// 5. Importamos Redirect from Reach Router
+import { Router, Redirect } from '@reach/router'
+// 6. Importamos not found
+import { NotFound } from './NotFound'
+
+
+export const App = () => {
+  // 3. Utilizamos useContext para obtener el isAuth
+  const { isAuth } = useContext(Context)
+
+  return (
+    <>
+      <GlobalStyle />
+      <Logo />
+      <Router>
+        { /* La ruta por defecto será el 404*/ }
+        <NotFound default />
+        <Home path='/' />
+        <Home path='/pet/:categoryId' />
+        <Detail path='/detail/:detailId' />
+        { /* Esta ruta sería para hacer login */ }
+        { !isAuth && <NotRegisteredUser path='/login' /> }
+        { /* Estas redirecciones funcionarán si el usuario no esta logeado */ }
+        { !isAuth && <Redirect from='/favs' to='/login'/> }
+        { !isAuth && <Redirect from='/user' to='/login'/> }
+        { /* Esto es para que no se muestre el 404 al logearse */ }
+        { isAuth && <Redirect from='login' to='/'/> }
+        <User path='/user' />
+        <Favs path='/favs' />
+      </Router>
+        {
+          // 4. Quitamos el <Context.Consumer> y toda la ternaria... arriba haremos las verificaciones.
+        }
+      <NavBar />
+    </>
+  )
+}
+```
+
 ## React Helmet
+
+Existe la creencia que las aplicaciones de React no pueden gestionar bien el tema del SEO pero eso no es cierto. Existe componentes como React Helmet que permiten trabajar con las etiquetas del head...
+
+> npm install react-helmet
+
+Luego vamos a src/pages/Home.js
+
+```javascript
+//1. Importamos Helmet
+import { Helmet } from 'react-helmet'
+
+//2. Helmet se puede usar en cualquier sitio del arbol de elementos
+export const Home = ({ categoryId }) => {
+  return(
+    <>
+      <Helmet>
+        <title>Petgram - Tu app de fotos de mascotas</title>
+        <meta name='description' content='Con Petgram puedes encontrar fotos de animales domésticos muy bonitos' />
+      </Helmet>
+    </>
+  )
+}
+```
+
+Lo mismo se puede hacer en Favs con:
+ - title: Petgram - Tus favoritos
+ - description: Aquí puedes encontrar tus favoritos
+
+Ahora podemos crear un Layout, en src/Layout/index.js
+
+En styles.js
+
+```javascript
+import styled from 'styled-components'
+
+export const Div = styled.div`
+  padding: 16px;
+`
+
+export const Title = styled.h1`
+  font-size: 24px;
+  font-weight: 600;
+  color: #222;
+  padding-bottom: 8px
+`
+
+export const Subtitle = styled.h2`
+  font-size: 16px;
+  font-weight: 400;
+  color: #333;
+  padding-bottom: 4px
+`
+```
+
+```javascript
+import React from 'react'
+import { Helmet } from 'react-helmet'
+import { Div, Title, Subtitle } from './styles'
+
+export const Layout = ({ children, title, subtitle }) => {
+  return (
+    <>
+      <Helmet>
+        { title && <title>{title} | Petgram 🐶</title> }
+        { subtitle && <meta name='description' content={subtitle} />}
+      </Helmet>
+      <Div>
+        { title && <Title>{title}</Title> }
+        { subtitle && <Subtitle>{subtitle}</Subtitle> }
+        { children }
+      </Div>
+    </>
+  )
+}
+```
+
+Este layout ya podemos utilizarlo en una página, por ejemplo en Detail.js
+
+```javascript
+import { Layout } from '../components/Layout'
+
+export const Detail = ({ detailId }) => (
+  <Layout title={`Fotografía ${detailId}`}>
+    <PhotoCardWithQuery id={detailId} />
+  </Layout>
+)
+```
+
+Entonces ese Layout ya lo puedo utilizar en Favs y en Home, retirando el import del Helmet.
 
 ## Midiendo el performance de nuestra app y usando React.memo()
 
+Saber medir la performance de nuestra app con react es importantísimo para detectar algunos problemas que pueda tener y mejorar la experiencia de usuario.
+
+Primero debemos compilar nuestra aplicación en modo desarrollo
+
+> ./node_modules/.bin/webpack --mode "development"
+
+Esto lo deja en la carpeta dist esto podemos servirlo con el comando con -s para single page application
+
+> npx serve dist -s
+
+Al utilizar la web app en modo desarrollo podemos con la Chrome Dev Tools irnos a la pestaña de Performance. Esto se puede utilizar para ver cuanto se tarda todo en renderizar.
+
+DCL: DOMContentLoaded Event que nos dice que el DOM ya está cargado.
+FP: First Paint es el primer pintado de nuestra aplicación.
+FCP: First Contentful Paint es el primer pintado con contenido.
+FMP: Es el First Meaningful Paint, el primero con significancia.
+
+Aparte de eso con ReactDeveloperTools podemos ver con el Profiler el coste de nuestros componentes.
+
+Debemos iniciar grabación en el Profiler y movernos por la página y luego detenemos el profiler y podemos ver paso a paso todo lo que ha tenido que renderizar y si está renderizando cosas de más.
+
+Podemos crear un script para hacer esto:
+
+```json
+"scripts": {
+  "serve:dev": "webpack --mode 'development' && npx serve dist -s",
+}
+```
+
+Así como la lista de categorías la renderiza siempre que nos movemos de página apesar de que no cambia visualmente. Etonces aquí podemos utilizar React Memo para la lista de categorías.
+
+src/components/ListOfCategories/index.js
+
+```javascript
+// 1. El ListOfCategories ya no lo exportamos directamente sino que le llamamos ListOfCategoriesComponent
+
+const ListOfCategoriesComponent = () => {
+  return (<></>)
+}
+
+export const ListOfCategories = React.memo(ListOfCategoriesComponent)
+```
+
+Igual si le damos varias veces a la misma categoría la página Home se vuelve a cargar, entonces aquí también podemos usar React.memo
+
+```javascript
+// 1. Aquí le cambiamos el nombre al componente y no lo exportamos directo
+const HomePage = () => {
+
+}
+
+// 2. Aquí exportamos home con React.memo pero le damos una función a React.memo que sirve para indicarle a React.memo en que momento debe activarse la memoización
+export const Home = React.memo(HomePage, (prevProps, props) => {
+  return prevProps.categoryId === props.categoryId
+})
+```
+
+Hay que tomar en cuenta que React.memo puede generarnos problemas también y por eso si la performance no es el problema o el componente no tarda tanto evitemos utilizar la memoización.
+
 ## React.lazy() y componente Suspense
+
+Actualmente estamos cargando todas las dependencias de nuestra aplicación de golpe, sin importar si las necesitamos. En el único sitio que hemos hecho este tipo de control es con el polyfill del intersectionObserver pero eso mismo se puede aplicar para todos los componentes...
+
+React.lazy() no permitirá importar de forma dínamica los diferentes componentes que necesitamos. 
+
+En App.js tenemos todas las rutas de nuestra aplicación.
+
+```javascript
+import React, { useContext, Suspense } from 'react'
+// En lugar de importar Fav así:
+// import { Favs } from './pages/Favs'
+// Podemos importarlo así:
+const Favs = React.lazy(() => import('./pages/Favs'))
+// Y nada más con esto React ya sabe que debe cargarlo a la hora de mostrarlo...
+// Todo lo que renderiza debe estar envuelto en el Suspense
+return (
+  <Suspense fallback={<div />}>
+  </Suspense>
+)
+```
+
+Ah pero para que esto funcione las páginas que queremos cargar con Lazy no se pueden exportar nombradas sino con default entonces Favs.js
+
+```javascript
+const Favs = () => {}
+
+export default Favs
+```
 
 ## Usando PropTypes para validar las props
 
+Conforme las aplicaciones se van haciendo más y más grandes vamos a querer controlar los tipos de nuestras props, porque es muy dificil saber si algo era un booleano u otra cosa.
+
+Las PropTypes es una librería externa que hasta hace poco estaba en el core de React y sirve para validar los tipos de datos.
+
+> npm install prop-types
+
+Podemos utilizar la dependencia en el src/components/FavButton
+
+```javascript
+// resto de imports
+// 1. Importamos las PropTypes
+import PropTypes from 'prop-types'
+
+export const FavButton = ( { liked, likes, onClick } ) => {
+  // Código del FavButton
+}
+
+//2. Aquí las utilizamos
+// Le puedo poner isRequired si la prop es necesaria para que el componente funcione.
+FavButton.propTypes = {
+  liked: PropTypes.bool.isRequired,
+  likes: PropTypes.number.isRequired,
+  onClick: PropTypes.func.isRequired
+}
+```
+
+Puedo utilizarlo en ListOfFavs
+
+```javascript
+// 1. Import de PropTypes
+import PropTypes from 'prop-types'
+
+export const ListOfFavs = ({ favs = [] }) => {
+  // Código del componente
+}
+
+// 2. Utilizando PropTypes
+// Puede ser PropTypes.array pero puedo utilizara arrayOf()
+ListOfFavs.propTypes = {
+  favs: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      src: PropTypes.string.isRequired
+    })
+  )
+}
+```
+
+Podemos utilizarlo en el SubmitButton porque tiene Children
+
+```javascript
+import PropTypes from 'porp-types'
+
+export const SubmitButton = ({ children, disabled, onClick }) => {
+  // código del SubmitButton
+}
+
+// 1. Los Children son PropTypes.node
+SubmitButton.propTypes = {
+  disabled: PropType.bool,
+  onClick: PropType.func,
+  children: PropTypes.node.isRequired
+}
+```
+
+Se puede utilizar en propTypes más complejas como en el componente PhotoCard
+
+```javascript
+import PropTypes from 'prop-types'
+
+export const PhotoCard = ({ id, liked, likes = 0, src= DEFAULT_IMAGE }) => {
+  // Código del componente
+}
+
+// 1. Aquí puedo utilizar una función para validaciones especiales. Por ejemplo el valor de los likes no puede ser undefined o si es
+PhotoCard.propTypes = {
+  id: PropTypes.string.isRequired
+  liked: PropTypes.bool.isRequired
+  src: PropTypes.string.isRequired,
+  likes: function (props, propName, componentName) {
+    const propValue = props[propName]
+    if (propValue === undefined ){
+      return new Error(`${propName} value must be defined`)
+    }
+    if (propValue < 0) {
+      return new Error(`${propName} value must be greater than zero`)
+    }
+  }
+}
+```
+
 ## PWA: generando el manifest
 
+Para ver la app en modo desarrollo
+
+> npm run serve:dev
+
+Aquí podemos utilizar Lighthouse para hacer una auditoría de Progressive Web App.
+
+Primero al index.html hay que colocarle una etiqueta noscript en el body:
+
+```html
+<body>
+  <div id='app'></div>
+  <noscript>
+    <h3>Esta app necesita Javascript para funcionar</h3>
+  </noscript>
+</body>
+```
+Luego debemos instalar un plugin de webpack para que nos ayude a hacer el manifest
+
+> npm install --save-dev wepback-pwa-manifest
+
+Este plugin se utiliza en la configuración de Webpack
+
+```javascript
+// Resto de imports
+// 1. Importamos el plugin
+const WEbpackPwaManifestPlugin = require('webpack-pwa-manifest')
+const path = require('path')
+
+// 2. Buscamos la sección de Plugins
+module.exports = { 
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: 'src/index.html'
+    }),
+    new WebpackPwaManifestPlugin({
+      name: 'Petgram - Tu app de fotos de mascotas',
+      short_name: 'Petgram 🐶',
+      description: 'Con Petgram puedes encontrar fotos de animales domésticos muy fácilmente',
+      background_color: '#fff',
+      theme_color: '#b1a',
+      icons: [
+        {
+          // Ojo: Esta imagen tienen que existir
+          src: path.resolve('src/assets/icon.png')
+          sizes: [96, 128, 192, 256, 384, 512]
+        }
+      ]
+    })
+  ]
+}
+```
+
+Ahora volvemos a servir los estáticos
+
+> npm run serve:dev
+
+Y volvemos a correr LightHouse para ver que tal la applicación. Aún falta que la aplicación responda cuando el usuario esta offline
+
+**Un Aporte**
+
+```javascript
+new WebpackPwaManifestPlugin({
+      filename: 'manifest.webmanifest',
+      name: 'IntaPlatzi',
+      description: 'Tu app preferida para encontrar esas mascotas que tanto te encantan',
+      orientation: 'portrait',
+      display: 'standalone',
+      start_url: '/',
+      scope: '/',
+      background_color: '#456BD9',
+      theme_color: '#456BD9',
+      icons: [
+        {
+          src: path.resolve(__dirname, 'src/assets/icon.png'),
+          sizes: [96, 128, 192, 256, 384, 512],
+          destination: path.join('Icons'),
+          ios: true,
+        },
+      ],
+    })
+```
 ## PWA: soporte offline
+
+Workbox son una serie de utilidades de Google para ayudarnos a crear service workers y añadir funcionalidad offline
+
+> npm install --save-dev workbox-webpack-plugin 
+
+Y bueno, siempre en el webpack.config.js
+
+```javascript
+// 1. Primero lo importamos
+const WorkboxWebpackPlugin = require('workbox-webpack-plugin')
+
+// 2. Y luego buscamos el plugins y al final del listado de plugins
+module.exports = { 
+  plugins: [
+    // GenerateSW es para generar un Service Wroker
+    new WorkboxWebpackPlugin.GenerateSW({
+      runtimeCaching: [
+        {
+          // Estas son la direcciones de las que vienen las imagenes
+          urlPatthern: new RegExp('https://(res.cloudinary.com|images.unsplash.com)'),
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'images'
+          }
+        },
+        {
+          // Esta debería ser mi url
+          urlPatthern: new RegExp('https://petgram-server.midudev.now.sh'),
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'api'
+          }
+        }
+      ]
+    })
+  ]
+}
+```
+
+Ahora tenemos que cambiar la plantilla del index.html
+
+```html
+<body>
+  <div id='app'></div>
+  <noscript>
+    <h3>Esta app necesita Javascript para funcionar</h3>
+  </noscript>
+  <script>
+    // Primero revisa si el navegador soporta Service Workers
+    if('serviceWorker' in navigator) {
+      // Si los soporta entonces escucha el evento load para que cuando se ejecute se registre el service-worker.js
+      window.addEventListener('load', function(){
+        navigator.serviceWorker.register('/service-worker.js')
+        .then(registration => {
+          console.log('SW registrado')
+        })
+        .catch(registrationError => {
+          console.log('SW error', registrationError)
+        })
+      })
+    }
+  </script>
+</body>
+```
+
+Y ahora volvemos a verlo desde LightHouse para ver que calificaciones nos da.
+
+Apollo Offline?
+
+Ahora la aplicación se puede Instalar.
 
 ## Testing con Cypress
 
-# Conclusiones
+Primero volvemos a publicar nuestra aplicación
 
-## ¡Felicidades!
+> vercel
+
+En el now.json
+
+```json
+{
+  "src": "(.*).png", "dest": "/$1.png"
+}
+```
+
+Una vez que hemos hecho el deploy nos dará una url e instalaremos cypress
+
+> npm install --save-dev cypress
+
+Cypress permite hacer test end to end
+
+> ./node_modules/.bin/cypress open
+
+Nos va a abrir otra ventana y le podemos dar run all specs
+
+Nos crea una carpeta llamada cypress.
+
+Cambiamos el script de test en el package.json
+
+```json
+"script": {
+  "test": "cypress open"
+}
+```
+
+Eliminamos examples y en integration/examples creamos la carpeta integration/petgram, en la carpeta creamos nuestro primer test llamandolo test_spec.js
+
+```javascript
+// El siguiente comentario es necesario por el linter
+
+/* global describe, it, expect */
+describe('Mi primer test', function() {
+  it('Para ver si funciona', function() {
+    expect(true).to.equal(true)
+  })
+})
+```
+
+Corremos nuevamente nuestros tests para ver que funcione
+
+Ahora modificamos el cypress.json
+
+```json
+{
+  "baseUrl": "https://petgram.midudev.now.sh",
+  "chromeWebSecurity": false,
+  "viewportWidth": 500,
+  "viewportHeight": 800
+}
+```
+
+Ahora volvemos a los Test
+
+```javascript
+/* global describe, it, cy */
+
+describe('Petgram', function() {
+  it('Para ver si la app funciona', function() {
+    // Aquí visitamos una página
+    cy.visit('/')
+  })
+
+  it('Navegamos a una categoria y vemos fotografías', function() {
+    // Aquí visitamos una ruta
+    cy.visit('/pet/1')
+    // Y luego vemos si podemos obtener un elemento article
+    cy.get('article')
+  })
+
+  it('Si podemos navegar con la navbar a la home', function() {
+    // Visitamos una ruta
+    cy.visit('/pet/1')
+    // Obtenemos el nav y del nav el anchor, el primer elemento (proque hay varios) y le damos click
+    cy.get('nav a').first().click()
+    // El url debería incluir /
+    cy.url().should('include', '/')
+  })
+
+  it('Los usuarios no registrados ven el formulario de registro e inicio de sesión al ir a favs', function() {
+    // Visitamos favs
+    cy.visit('/favs')
+    // Y obtenemos los elementos form, debería haber 2 elementos
+    cy.get('form').should('have.length', 2)
+  })
+})
+```
