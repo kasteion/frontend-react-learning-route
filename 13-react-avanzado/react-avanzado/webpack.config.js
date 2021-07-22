@@ -53,14 +53,14 @@ module.exports = {
     new WorkboxWeppackPlugin.GenerateSW({
       runtimeCaching: [
         {
-          urlPattern: '/https://(res.cloudinary.com|images.unsplash.com)/',
+          urlPattern: /https:\/\/(res.cloudinary.com|images.unsplash.com)/,
           handler: 'CacheFirst',
           options: {
             cacheName: 'images'
           }
         },
         {
-          urlPattern: '/https://kasteion-petgram-api.herokuapp.com/',
+          urlPattern: /https:\/\/kasteion-petgram-api.herokuapp.com/,
           handler: 'NetworkFirst',
           options: {
             cacheName: 'api'
