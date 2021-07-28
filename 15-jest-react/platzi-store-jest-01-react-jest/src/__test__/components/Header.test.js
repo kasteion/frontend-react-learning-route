@@ -1,5 +1,6 @@
 import React from 'react';
 import { mount, shallow } from 'enzyme';
+import { create } from 'react-test-renderer';
 import ProviderMock from '../../__mocks__/ProviderMock';
 import Header from '../../components/Header';
 
@@ -14,7 +15,7 @@ describe('<Header />', () => {
     expect(header.length).toEqual(1);
   });
 
-  test('Rendel del titulo', () => {
+  test('Render del titulo', () => {
     /* eslint-disable */
     const header = mount(
       <ProviderMock>
@@ -22,5 +23,16 @@ describe('<Header />', () => {
       </ProviderMock>
     );
     expect(header.find('.Header-title').text()).toEqual('Platzi Store');
+  });
+});
+
+describe('Header snapshot', () => {
+  test('Comprobar la UI del componente Footer', () => {
+    const header = create(
+      <ProviderMock>
+        <Header />
+      </ProviderMock>
+    );
+    expect(header.toJSON()).toMatchSnapshot();
   });
 });
