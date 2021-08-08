@@ -32,3 +32,18 @@ type TAPIAvoResponse = {
   data: TProduct[];
   error?: string;
 };
+
+type TCart = {
+  product: TProduct;
+  number: number;
+};
+
+type TState = {
+  cart: Array<TCart>;
+};
+
+type TUseInitialState = {
+  addToCart: Function;
+  removeFromCart: Function;
+  state: TState;
+};

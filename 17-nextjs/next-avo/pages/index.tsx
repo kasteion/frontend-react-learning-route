@@ -1,31 +1,42 @@
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import Navbar from "../components/Navbar";
+import React from "react";
+import { Header } from "semantic-ui-react";
 import styled from "styled-components";
+import { Segment, Dimmer, Loader, Message } from "semantic-ui-react";
+import { useProductsList } from "../hooks/useProductsList";
+import Avocado from "../components/Avocado";
+import AvoList from "../components/AvoList";
 
-const Title = styled.h1`
-  color: ${({ theme }) => theme.colors.primary};
+const Title = styled(Header)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
+
 const HomePage = () => {
-  const [productList, setProductList] = useState([] as Array<TProduct>);
-  useEffect(() => {
-    fetch("/api/avo")
-      .then((response) => response.json())
-      .then((response: TAPIAvoResponse) => {
-        setProductList(response.data as Array<TProduct>);
-      });
-  }, []);
+  const { error, loading, products } = useProductsList();
 
   return (
-    <div>
-      <Navbar />
-      <Title>Home</Title>
-      {productList.map((avo) => (
-        <div key={avo.id}>
-          <Link href={`/product/${avo.id}`}>{avo.name}</Link>
-        </div>
-      ))}
-    </div>
+    <>
+      <Title as="h1">
+        Platzi <Avocado size="50pt" /> Avo
+      </Title>
+      {loading ? (
+        <>
+          <Dimmer active inverted>
+            <Loader inverted>Loading</Loader>
+          </Dimmer>
+        </>
+      ) : error ? (
+        <Segment>
+          <Message negative>
+            <Message.Header>Sorry</Message.Header>
+            <p>{error}</p>
+          </Message>
+        </Segment>
+      ) : (
+        <AvoList avos={products} />
+      )}
+    </>
   );
 };
 

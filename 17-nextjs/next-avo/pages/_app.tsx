@@ -1,5 +1,9 @@
 import { AppProps } from "next/app";
 import { createGlobalStyle, ThemeProvider } from "styled-components";
+import "semantic-ui-css/semantic.min.css";
+import Layout from "../components/Layout";
+import AppContext from "../context/AppContext";
+import useInitialState from "../hooks/useInitialState";
 
 const GlobaStyle = createGlobalStyle`
   body {
@@ -16,12 +20,17 @@ const theme = {
 };
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const initialState = useInitialState();
   return (
     <>
       <GlobaStyle />
-      <ThemeProvider theme={theme}>
-        <Component {...pageProps} />
-      </ThemeProvider>
+      <AppContext.Provider value={initialState}>
+        <ThemeProvider theme={theme}>
+          <Layout>
+            <Component {...pageProps} />
+          </Layout>
+        </ThemeProvider>
+      </AppContext.Provider>
     </>
   );
 }
