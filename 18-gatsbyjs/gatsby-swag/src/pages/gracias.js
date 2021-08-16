@@ -13,7 +13,7 @@ function gracias() {
         <p>¡Te esperamos de vuelta, no pares de aprender!</p>
         <p>
           <span role="img" aria-label="emoji">
-            ❤
+            ❤️
           </span>
         </p>
         <Link to="/">

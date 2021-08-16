@@ -1,7 +1,9 @@
 import React from "react"
+import { GatsbyImage, getImage } from "gatsby-plugin-image"
 
-function image() {
-  return <div></div>
+function Image({ data, alt }) {
+  const image = getImage(data.icon)
+  return <GatsbyImage image={image} alt={alt} />
 }
 
-export default image
+export default Image

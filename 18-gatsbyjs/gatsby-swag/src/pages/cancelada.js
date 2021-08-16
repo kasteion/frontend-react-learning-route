@@ -11,7 +11,7 @@ function cancelada() {
         <h2>Compra Cancelada</h2>
         <p>
           Tu compra ha sido cancelada{" "}
-          <span role="img" aria-aria-label="emoji">
+          <span role="img" aria-label="emoji">
             😢
           </span>
           .

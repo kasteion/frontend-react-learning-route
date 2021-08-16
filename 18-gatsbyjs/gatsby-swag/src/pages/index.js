@@ -1,33 +1,35 @@
 import * as React from "react"
-import { Link } from "gatsby"
-import { StaticImage } from "gatsby-plugin-image"
+import { graphql } from "gatsby"
+// import { StaticImage } from "gatsby-plugin-image"
 
-import Layout from "../components/layout"
 import Seo from "../components/seo"
-import { Jumbo } from "../components"
+import { Jumbo, Products } from "../components"
 
-const IndexPage = () => (
-  <Layout>
-    <Seo title="Home" />
-    <Jumbo />
-    <h1>Hi people</h1>
-    <p>Welcome to your new Gatsby site.</p>
-    <p>Now go build something great.</p>
-    <StaticImage
-      src="../images/gatsby-astronaut.png"
-      width={300}
-      quality={95}
-      formats={["AUTO", "WEBP", "AVIF"]}
-      alt="A Gatsby astronaut"
-      style={{ marginBottom: `1.45rem` }}
-    />
-    <p>
-      <Link to="/page-2/">Go to page 2</Link> <br />
-      <Link to="/gracias/">Go to gracias</Link> <br />
-      <Link to="/cancelada/">Go to cancelada</Link> <br />
-      <Link to="/using-typescript/">Go to "Using TypeScript"</Link>
-    </p>
-  </Layout>
-)
+export const query = graphql`
+  query GET_DESCRIPTION {
+    allSite {
+      edges {
+        node {
+          siteMetadata {
+            description
+          }
+        }
+      }
+    }
+  }
+`
+
+const IndexPage = ({ data }) => {
+  // console.log(data.allSite.edges[0].node.siteMetadata.description)
+  return (
+    <>
+      <Seo title="Home" />
+      <Jumbo
+        description={data.allSite.edges[0].node.siteMetadata.description}
+      />
+      <Products />
+    </>
+  )
+}
 
 export default IndexPage
